@@ -23,5 +23,10 @@
     "dotenv": "^17.4.2",
     "fastify": "^5.12.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
   }
 }
