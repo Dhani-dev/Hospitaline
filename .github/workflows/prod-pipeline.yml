@@ -1,0 +1,47 @@
+name: Production Environment Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  quality-and-deploy-prod:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run tests with coverage
+        env:
+          NODE_ENV: production
+          SUPABASE_URL: ${{ secrets.SUPABASE_PROD_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_PROD_SECRET_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PROD_PUBLISHABLE_KEY }}
+          SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_PROD_JWKS_URL }}
+        run: npm run test:coverage
+
+      - name: Verify coverage gate >= 85%
+        run: npm run coverage:check:85
+
+      - name: Deploy to Render Production Service
+        env:
+          RENDER_PROD_DEPLOY_HOOK: ${{ secrets.RENDER_PROD_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_PROD_DEPLOY_HOOK" ]; then
+            echo "Missing RENDER_PROD_DEPLOY_HOOK secret"
+            exit 1
+          fi
+          curl -fsS -X POST "$RENDER_PROD_DEPLOY_HOOK"
