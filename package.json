@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/Dhani-dev/Hospitaline/issues"
   },
-  "homepage": "https://github.com/Dhani-dev/Hospitaline#readme"
+  "homepage": "https://github.com/Dhani-dev/Hospitaline#readme",
+  "dependencies": {
+    "fastify": "^5.12.0"
+  }
 }
