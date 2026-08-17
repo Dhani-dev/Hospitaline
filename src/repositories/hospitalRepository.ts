@@ -12,14 +12,14 @@ export class HospitalRepository {
   constructor(private readonly db: DbClient) {}
 
   async list(): Promise<Hospital[]> {
-    const { data, error } = await this.db.from("hospitals").select("*");
+    const { data, error } = await this.db.from("hospital").select("*");
     if (error) throw error;
     return data ?? [];
   }
 
   async getById(id: string): Promise<Hospital | null> {
     const { data, error } = await this.db
-      .from("hospitals")
+      .from("hospital")
       .select("*")
       .eq("id", id)
       .maybeSingle();
@@ -30,7 +30,7 @@ export class HospitalRepository {
 
   async create(payload: NewHospital): Promise<Hospital> {
     const { data, error } = await this.db
-      .from("hospitals")
+      .from("hospital")
       .insert(payload)
       .select("*")
       .single();
@@ -41,7 +41,7 @@ export class HospitalRepository {
 
   async replace(id: string, payload: NewHospital): Promise<Hospital | null> {
     const { data, error } = await this.db
-      .from("hospitals")
+      .from("hospital")
       .update(payload)
       .eq("id", id)
       .select("*")
@@ -53,7 +53,7 @@ export class HospitalRepository {
 
   async patch(id: string, payload: UpdateHospital): Promise<Hospital | null> {
     const { data, error } = await this.db
-      .from("hospitals")
+      .from("hospital")
       .update(payload)
       .eq("id", id)
       .select("*")
@@ -65,7 +65,7 @@ export class HospitalRepository {
 
   async remove(id: string): Promise<boolean> {
     const { data, error } = await this.db
-      .from("hospitals")
+      .from("hospital")
       .delete()
       .eq("id", id)
       .select("id")
@@ -81,7 +81,7 @@ export class HospitalRepository {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    let request = this.db.from("hospitals").select("*", { count: "exact" });
+    let request = this.db.from("hospital").select("*", { count: "exact" });
 
     if (payload.filters?.name) {
       request = request.ilike("name", `%${payload.filters.name}%`);

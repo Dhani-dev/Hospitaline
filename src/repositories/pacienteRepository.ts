@@ -15,14 +15,14 @@ export class PacienteRepository {
   constructor(private readonly db: DbClient) {}
 
   async list(): Promise<Paciente[]> {
-    const { data, error } = await this.db.from("pacientes").select("*");
+    const { data, error } = await this.db.from("paciente").select("*");
     if (error) throw error;
     return data ?? [];
   }
 
   async getById(id: string): Promise<Paciente | null> {
     const { data, error } = await this.db
-      .from("pacientes")
+      .from("paciente")
       .select("*")
       .eq("id", id)
       .maybeSingle();
@@ -33,7 +33,7 @@ export class PacienteRepository {
 
   async create(payload: NewPaciente): Promise<Paciente> {
     const { data, error } = await this.db
-      .from("pacientes")
+      .from("paciente")
       .insert(payload)
       .select("*")
       .single();
@@ -44,7 +44,7 @@ export class PacienteRepository {
 
   async replace(id: string, payload: NewPaciente): Promise<Paciente | null> {
     const { data, error } = await this.db
-      .from("pacientes")
+      .from("paciente")
       .update(payload)
       .eq("id", id)
       .select("*")
@@ -56,7 +56,7 @@ export class PacienteRepository {
 
   async patch(id: string, payload: UpdatePaciente): Promise<Paciente | null> {
     const { data, error } = await this.db
-      .from("pacientes")
+      .from("paciente")
       .update(payload)
       .eq("id", id)
       .select("*")
@@ -68,7 +68,7 @@ export class PacienteRepository {
 
   async remove(id: string): Promise<boolean> {
     const { data, error } = await this.db
-      .from("pacientes")
+      .from("paciente")
       .delete()
       .eq("id", id)
       .select("id")
@@ -84,7 +84,7 @@ export class PacienteRepository {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    let request = this.db.from("pacientes").select("*", { count: "exact" });
+    let request = this.db.from("paciente").select("*", { count: "exact" });
 
     if (payload.filters?.hospital_id) {
       request = request.eq("hospital_id", payload.filters.hospital_id);

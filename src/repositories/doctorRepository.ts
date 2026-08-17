@@ -14,14 +14,14 @@ export class DoctorRepository {
   constructor(private readonly db: DbClient) {}
 
   async list(): Promise<Doctor[]> {
-    const { data, error } = await this.db.from("doctors").select("*");
+    const { data, error } = await this.db.from("doctor").select("*");
     if (error) throw error;
     return data ?? [];
   }
 
   async getById(id: string): Promise<Doctor | null> {
     const { data, error } = await this.db
-      .from("doctors")
+      .from("doctor")
       .select("*")
       .eq("id", id)
       .maybeSingle();
@@ -32,7 +32,7 @@ export class DoctorRepository {
 
   async create(payload: NewDoctor): Promise<Doctor> {
     const { data, error } = await this.db
-      .from("doctors")
+      .from("doctor")
       .insert(payload)
       .select("*")
       .single();
@@ -43,7 +43,7 @@ export class DoctorRepository {
 
   async replace(id: string, payload: NewDoctor): Promise<Doctor | null> {
     const { data, error } = await this.db
-      .from("doctors")
+      .from("doctor")
       .update(payload)
       .eq("id", id)
       .select("*")
@@ -55,7 +55,7 @@ export class DoctorRepository {
 
   async patch(id: string, payload: UpdateDoctor): Promise<Doctor | null> {
     const { data, error } = await this.db
-      .from("doctors")
+      .from("doctor")
       .update(payload)
       .eq("id", id)
       .select("*")
@@ -67,7 +67,7 @@ export class DoctorRepository {
 
   async remove(id: string): Promise<boolean> {
     const { data, error } = await this.db
-      .from("doctors")
+      .from("doctor")
       .delete()
       .eq("id", id)
       .select("id")
@@ -83,7 +83,7 @@ export class DoctorRepository {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
-    let request = this.db.from("doctors").select("*", { count: "exact" });
+    let request = this.db.from("doctor").select("*", { count: "exact" });
 
     if (payload.filters?.hospital_id) {
       request = request.eq("hospital_id", payload.filters.hospital_id);
