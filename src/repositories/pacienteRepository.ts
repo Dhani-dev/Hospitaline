@@ -4,7 +4,7 @@ import { QueryPayload, QueryResult } from "../types/query";
 
 export type PacienteFilters = {
   hospital_id?: string;
-  doctor_id?: string;
+  doctor_id?: string | null;
   first_name?: string;
   last_name?: string;
   status?: "stable" | "critical" | "discharged";

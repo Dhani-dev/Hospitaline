@@ -22,7 +22,7 @@ const pacienteQuerySchema = z.object({
   filters: z
     .object({
       hospital_id: z.string().uuid().optional(),
-      doctor_id: z.string().uuid().optional(),
+      doctor_id: z.string().uuid().nullable().optional(),
       first_name: z.string().optional(),
       last_name: z.string().optional(),
       status: z.enum(["stable", "critical", "discharged"]).optional(),
