@@ -3,7 +3,7 @@
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm install --force
 
 FROM deps AS build
 COPY tsconfig.json ./
@@ -15,7 +15,7 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm install --omit=dev --force
 COPY --from=build /app/dist ./dist
 EXPOSE 3000
 CMD ["node", "dist/server.js"]
