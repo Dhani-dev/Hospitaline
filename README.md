@@ -4,7 +4,6 @@ API REST para la gestión de **hospitales, doctores y pacientes**, construida co
 
 - Test / staging: https://hospitaline-dev.onrender.com
 - Producción: https://hospitaline.onrender.com
-- Repositorio: https://github.com/Dhani-dev/Hospitaline
 
 ---
 
@@ -55,13 +54,6 @@ Puedes partir de los archivos de ejemplo:
 ```bash
 cp .env.test.example .env.test
 cp .env.prod.example .env.prod
-```
-
-En Windows PowerShell:
-
-```powershell
-Copy-Item .env.test.example .env.test
-Copy-Item .env.prod.example .env.prod
 ```
 
 Variables principales:
@@ -302,38 +294,6 @@ docker compose run --rm tests npm run coverage:check:85
 ```
 
 El parámetro `--rm` elimina el contenedor temporal al terminar.
-
----
-
-## `npm install` vs `npm ci`
-
-En el desarrollo local del proyecto se utiliza:
-
-```bash
-npm install
-```
-
-porque permite instalar las dependencias definidas en `package.json`.
-
-El proyecto también tiene `package-lock.json`. Por eso `npm ci` es útil en entornos reproducibles como CI y Docker: instala exactamente las versiones registradas en el lockfile y no está pensado para modificarlo.
-
-Actualmente el proyecto utiliza:
-
-```text
-Local:
-npm install
-
-Dockerfile:
-npm install
-
-Docker Compose - tests:
-npm ci
-
-GitHub Actions:
-npm ci --force
-```
-
-Por lo tanto, cuando el README indica `npm install` para ejecutar el proyecto localmente, es intencional y coincide con la configuración actual.
 
 ---
 

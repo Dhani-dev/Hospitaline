@@ -50,7 +50,8 @@ Para ambos servicios:
 
 ```text
 Runtime: Node
-Build Command: npm install && npm run build
+Build Command para el entorno de test: npm install && npm run build
+Build Command para el entorno de producción: npm ci --include=dev && npm run build
 Start Command: npm run start
 Health Check Path: /health
 ```
