@@ -1,7 +1,7 @@
-create table if not exists public.pacientes (
+create table if not exists public.paciente (
   id uuid primary key default gen_random_uuid(),
-  hospital_id uuid not null references public.hospitals(id) on delete cascade,
-  doctor_id uuid references public.doctors(id) on delete set null,
+  hospital_id uuid not null references public.hospital(id) on delete cascade,
+  doctor_id uuid references public.doctor(id) on delete set null,
   first_name text not null,
   last_name text not null,
   birth_date date not null,
@@ -11,6 +11,6 @@ create table if not exists public.pacientes (
   updated_at timestamptz not null default now()
 );
 
-create trigger trg_pacientes_updated_at
-before update on public.pacientes
+create trigger trg_paciente_updated_at
+before update on public.paciente
 for each row execute procedure public.set_timestamp();
