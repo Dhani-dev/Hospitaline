@@ -72,16 +72,16 @@ describe("Hospital routes", () => {
     await app.close();
   });
 
-  it("GET /hospitals", async () => {
-    const res = await app.inject({ method: "GET", url: "/hospitals" });
+  it("GET /api/v1/hospitals", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/v1/hospitals" });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.payload)).toHaveLength(1);
   });
 
-  it("POST /hospitals", async () => {
+  it("POST /api/v1/hospitals", async () => {
     const res = await app.inject({
       method: "POST",
-      url: "/hospitals",
+      url: "/api/v1/hospitals",
       payload: {
         name: "North",
         address: "B Street",
@@ -93,13 +93,13 @@ describe("Hospital routes", () => {
     expect(JSON.parse(res.payload).name).toBe("North");
   });
 
-  it("PUT /hospitals/:id", async () => {
-    const list = await app.inject({ method: "GET", url: "/hospitals" });
-    const id = JSON.parse(list.payload)[0].id; 
+  it("PUT /api/v1/hospitals/:id", async () => {
+    const list = await app.inject({ method: "GET", url: "/api/v1/hospitals" });
+    const id = JSON.parse(list.payload)[0].id;
 
     const res = await app.inject({
       method: "PUT",
-      url: `/hospitals/${id}`,
+      url: `/api/v1/hospitals/${id}`,
       payload: {
         name: "Central Updated",
         address: "New Street",
@@ -112,13 +112,13 @@ describe("Hospital routes", () => {
     expect(JSON.parse(res.payload).name).toBe("Central Updated");
   });
 
-  it("PATCH /hospitals/:id", async () => {
-    const list = await app.inject({ method: "GET", url: "/hospitals" });
+  it("PATCH /api/v1/hospitals/:id", async () => {
+    const list = await app.inject({ method: "GET", url: "/api/v1/hospitals" });
     const id = JSON.parse(list.payload)[0].id;
 
     const res = await app.inject({
       method: "PATCH",
-      url: `/hospitals/${id}`,
+      url: `/api/v1/hospitals/${id}`,
       payload: { city: "Cali" }
     });
 
@@ -126,10 +126,10 @@ describe("Hospital routes", () => {
     expect(JSON.parse(res.payload).city).toBe("Cali");
   });
 
-  it("QUERY /hospitals/query", async () => {
+  it("QUERY /api/v1/hospitals/query", async () => {
     const res = await app.inject({
       method: "QUERY",
-      url: "/hospitals/query",
+      url: "/api/v1/hospitals/query",
       payload: { filters: { city: "Cali" } }
     });
 
@@ -137,10 +137,10 @@ describe("Hospital routes", () => {
     expect(JSON.parse(res.payload).data.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("DELETE /hospitals/:id", async () => {
+  it("DELETE /api/v1/hospitals/:id", async () => {
     const created = await app.inject({
       method: "POST",
-      url: "/hospitals",
+      url: "/api/v1/hospitals",
       payload: {
         name: "South",
         address: "X Street",
@@ -150,14 +150,14 @@ describe("Hospital routes", () => {
     });
     const id = JSON.parse(created.payload).id;
 
-    const res = await app.inject({ method: "DELETE", url: `/hospitals/${id}` });
+    const res = await app.inject({ method: "DELETE", url: `/api/v1/hospitals/${id}` });
     expect(res.statusCode).toBe(204);
   });
 
   it("returns 404 when hospital is missing", async () => {
     const res = await app.inject({
       method: "GET",
-      url: "/hospitals/00000000-0000-4000-8000-000000000000"
+      url: "/api/v1/hospitals/00000000-0000-4000-8000-000000000000"
     });
     expect(res.statusCode).toBe(404);
   });
@@ -165,7 +165,7 @@ describe("Hospital routes", () => {
   it("returns 400 on invalid hospital payload", async () => {
     const res = await app.inject({
       method: "POST",
-      url: "/hospitals",
+      url: "/api/v1/hospitals",
       payload: {
         name: "",
         address: "",

@@ -12,9 +12,9 @@ export function buildApp(services: ServiceContainer) {
 
   app.get("/health", async () => ({ status: "ok" }));
 
-  app.register(hospitalRoutes(services));
-  app.register(doctorRoutes(services));
-  app.register(pacienteRoutes(services));
+  app.register(hospitalRoutes(services), { prefix: "/api/v1" });
+  app.register(doctorRoutes(services), { prefix: "/api/v1" });
+  app.register(pacienteRoutes(services), { prefix: "/api/v1" });
 
   return app;
 }

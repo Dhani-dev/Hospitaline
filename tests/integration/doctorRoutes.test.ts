@@ -73,16 +73,16 @@ describe("Doctor routes", () => {
     await app.close();
   });
 
-  it("GET /doctors", async () => {
-    const res = await app.inject({ method: "GET", url: "/doctors" });
+  it("GET /api/v1/doctors", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/v1/doctors" });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.payload).length).toBeGreaterThan(0);
   });
 
-  it("POST /doctors", async () => {
+  it("POST /api/v1/doctors", async () => {
     const res = await app.inject({
       method: "POST",
-      url: "/doctors",
+      url: "/api/v1/doctors",
       payload: {
         hospital_id: "11111111-1111-4111-8111-111111111111",
         first_name: "Luis",
@@ -94,13 +94,13 @@ describe("Doctor routes", () => {
     expect(res.statusCode).toBe(201);
   });
 
-  it("PUT /doctors/:id", async () => {
-    const list = await app.inject({ method: "GET", url: "/doctors" });
+  it("PUT /api/v1/doctors/:id", async () => {
+    const list = await app.inject({ method: "GET", url: "/api/v1/doctors" });
     const id = JSON.parse(list.payload)[0].id;
 
     const res = await app.inject({
       method: "PUT",
-      url: `/doctors/${id}`,
+      url: `/api/v1/doctors/${id}`,
       payload: {
         hospital_id: "11111111-1111-4111-8111-111111111111",
         first_name: "Ana",
@@ -114,13 +114,13 @@ describe("Doctor routes", () => {
     expect(JSON.parse(res.payload).specialty).toBe("Dermatology");
   });
 
-  it("PATCH /doctors/:id", async () => {
-    const list = await app.inject({ method: "GET", url: "/doctors" });
+  it("PATCH /api/v1/doctors/:id", async () => {
+    const list = await app.inject({ method: "GET", url: "/api/v1/doctors" });
     const id = JSON.parse(list.payload)[0].id;
 
     const res = await app.inject({
       method: "PATCH",
-      url: `/doctors/${id}`,
+      url: `/api/v1/doctors/${id}`,
       payload: { specialty: "Pediatrics" }
     });
 
@@ -128,10 +128,10 @@ describe("Doctor routes", () => {
     expect(JSON.parse(res.payload).specialty).toBe("Pediatrics");
   });
 
-  it("QUERY /doctors/query", async () => {
+  it("QUERY /api/v1/doctors/query", async () => {
     const res = await app.inject({
       method: "QUERY",
-      url: "/doctors/query",
+      url: "/api/v1/doctors/query",
       payload: { filters: { specialty: "Pediatrics" } }
     });
 
@@ -139,10 +139,10 @@ describe("Doctor routes", () => {
     expect(JSON.parse(res.payload).data.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("DELETE /doctors/:id", async () => {
+  it("DELETE /api/v1/doctors/:id", async () => {
     const created = await app.inject({
       method: "POST",
-      url: "/doctors",
+      url: "/api/v1/doctors",
       payload: {
         hospital_id: "11111111-1111-4111-8111-111111111111",
         first_name: "Maria",
@@ -153,14 +153,14 @@ describe("Doctor routes", () => {
     });
     const id = JSON.parse(created.payload).id;
 
-    const res = await app.inject({ method: "DELETE", url: `/doctors/${id}` });
+    const res = await app.inject({ method: "DELETE", url: `/api/v1/doctors/${id}` });
     expect(res.statusCode).toBe(204);
   });
 
   it("returns 404 when doctor is missing", async () => {
     const res = await app.inject({
       method: "GET",
-      url: "/doctors/00000000-0000-4000-8000-000000000000"
+      url: "/api/v1/doctors/00000000-0000-4000-8000-000000000000"
     });
     expect(res.statusCode).toBe(404);
   });
@@ -168,7 +168,7 @@ describe("Doctor routes", () => {
   it("returns 400 on invalid doctor payload", async () => {
     const res = await app.inject({
       method: "POST",
-      url: "/doctors",
+      url: "/api/v1/doctors",
       payload: {
         hospital_id: "not-uuid",
         first_name: "",

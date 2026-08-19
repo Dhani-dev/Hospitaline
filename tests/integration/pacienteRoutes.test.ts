@@ -75,16 +75,16 @@ describe("Paciente routes", () => {
     await app.close();
   });
 
-  it("GET /pacientes", async () => {
-    const res = await app.inject({ method: "GET", url: "/pacientes" });
+  it("GET /api/v1/pacientes", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/v1/pacientes" });
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.payload).length).toBeGreaterThan(0);
   });
 
-  it("POST /pacientes", async () => {
+  it("POST /api/v1/pacientes", async () => {
     const res = await app.inject({
       method: "POST",
-      url: "/pacientes",
+      url: "/api/v1/pacientes",
       payload: {
         hospital_id: "11111111-1111-4111-8111-111111111111",
         doctor_id: "22222222-2222-4222-8222-222222222222",
@@ -98,13 +98,13 @@ describe("Paciente routes", () => {
     expect(res.statusCode).toBe(201);
   });
 
-  it("PUT /pacientes/:id", async () => {
-    const list = await app.inject({ method: "GET", url: "/pacientes" });
+  it("PUT /api/v1/pacientes/:id", async () => {
+    const list = await app.inject({ method: "GET", url: "/api/v1/pacientes" });
     const id = JSON.parse(list.payload)[0].id;
 
     const res = await app.inject({
       method: "PUT",
-      url: `/pacientes/${id}`,
+      url: `/api/v1/pacientes/${id}`,
       payload: {
         hospital_id: "11111111-1111-4111-8111-111111111111",
         doctor_id: "22222222-2222-4222-8222-222222222222",
@@ -120,13 +120,13 @@ describe("Paciente routes", () => {
     expect(JSON.parse(res.payload).status).toBe("critical");
   });
 
-  it("PATCH /pacientes/:id", async () => {
-    const list = await app.inject({ method: "GET", url: "/pacientes" });
+  it("PATCH /api/v1/pacientes/:id", async () => {
+    const list = await app.inject({ method: "GET", url: "/api/v1/pacientes" });
     const id = JSON.parse(list.payload)[0].id;
 
     const res = await app.inject({
       method: "PATCH",
-      url: `/pacientes/${id}`,
+      url: `/api/v1/pacientes/${id}`,
       payload: { status: "discharged" }
     });
 
@@ -134,10 +134,10 @@ describe("Paciente routes", () => {
     expect(JSON.parse(res.payload).status).toBe("discharged");
   });
 
-  it("QUERY /pacientes/query", async () => {
+  it("QUERY /api/v1/pacientes/query", async () => {
     const res = await app.inject({
       method: "QUERY",
-      url: "/pacientes/query",
+      url: "/api/v1/pacientes/query",
       payload: { filters: { status: "discharged" } }
     });
 
@@ -145,10 +145,10 @@ describe("Paciente routes", () => {
     expect(JSON.parse(res.payload).data.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("DELETE /pacientes/:id", async () => {
+  it("DELETE /api/v1/pacientes/:id", async () => {
     const created = await app.inject({
       method: "POST",
-      url: "/pacientes",
+      url: "/api/v1/pacientes",
       payload: {
         hospital_id: "11111111-1111-4111-8111-111111111111",
         doctor_id: null,
@@ -161,14 +161,14 @@ describe("Paciente routes", () => {
     });
     const id = JSON.parse(created.payload).id;
 
-    const res = await app.inject({ method: "DELETE", url: `/pacientes/${id}` });
+    const res = await app.inject({ method: "DELETE", url: `/api/v1/pacientes/${id}` });
     expect(res.statusCode).toBe(204);
   });
 
   it("returns 404 when paciente is missing", async () => {
     const res = await app.inject({
       method: "GET",
-      url: "/pacientes/00000000-0000-4000-8000-000000000000"
+      url: "/api/v1/pacientes/00000000-0000-4000-8000-000000000000"
     });
     expect(res.statusCode).toBe(404);
   });
@@ -176,7 +176,7 @@ describe("Paciente routes", () => {
   it("returns 400 on invalid paciente payload", async () => {
     const res = await app.inject({
       method: "POST",
-      url: "/pacientes",
+      url: "/api/v1/pacientes",
       payload: {
         hospital_id: "bad",
         doctor_id: "bad",
