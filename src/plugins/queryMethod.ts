@@ -12,6 +12,6 @@ export const queryMethodPlugin: FastifyPluginAsync = async (fastify) => {
 
   if (!fastify.hasQueryMethod && !hasNativeQuery) {
     fastify.addHttpMethod("QUERY", { hasBody: true });
-    fastify.hasQueryMethod = 
+    fastify.hasQueryMethod = true;
   }
 };
