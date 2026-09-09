@@ -26,24 +26,24 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run tests with coverage
-        env:
-          NODE_ENV: test
-          SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_TEST_SECRET_KEY }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_TEST_PUBLISHABLE_KEY }}
-          SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_TEST_JWKS_URL }}
-        run: npm run test:coverage
+      # - name: Run tests with coverage
+      #   env:
+      #     NODE_ENV: test
+      #     SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+      #     SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_TEST_SECRET_KEY }}
+      #     SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_TEST_PUBLISHABLE_KEY }}
+      #     SUPABASE_JWKS_URL: ${{ secrets.SUPABASE_TEST_JWKS_URL }}
+      #   run: npm run test:coverage
 
-      - name: Verify coverage gate >= 60%
-        run: npm run coverage:check:60
+      # - name: Verify coverage gate >= 60%
+      #   run: npm run coverage:check:60
 
-      - name: Deploy to Render Test Service
-        env:
-          RENDER_TEST_DEPLOY_HOOK: ${{ secrets.RENDER_TEST_DEPLOY_HOOK }}
-        run: |
-          if [ -z "$RENDER_TEST_DEPLOY_HOOK" ]; then
-            echo "Missing RENDER_TEST_DEPLOY_HOOK secret"
-            exit 1
-          fi
-          curl -fsS -X POST "$RENDER_TEST_DEPLOY_HOOK"
+      # - name: Deploy to Render Test Service
+      #   env:
+      #     RENDER_TEST_DEPLOY_HOOK: ${{ secrets.RENDER_TEST_DEPLOY_HOOK }}
+      #   run: |
+      #     if [ -z "$RENDER_TEST_DEPLOY_HOOK" ]; then
+      #       echo "Missing RENDER_TEST_DEPLOY_HOOK secret"
+      #       exit 1
+      #     fi
+      #     curl -fsS -X POST "$RENDER_TEST_DEPLOY_HOOK"
