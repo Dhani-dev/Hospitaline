@@ -12,9 +12,13 @@ export function buildApp(services: ServiceContainer) {
 
   app.get("/health", async () => ({ status: "ok" }));
 
-  app.register(hospitalRoutes(services), { prefix: "/api/v1" });
-  app.register(doctorRoutes(services), { prefix: "/api/v1" });
-  app.register(pacienteRoutes(services), { prefix: "/api/v1" });
+  const apiPrefixes = ["/api/v1", "/api/v2"];
+
+  for (const prefix of apiPrefixes) {
+    app.register(hospitalRoutes(services), { prefix });
+    app.register(doctorRoutes(services), { prefix });
+    app.register(pacienteRoutes(services), { prefix });
+  }
 
   return app;
 }
