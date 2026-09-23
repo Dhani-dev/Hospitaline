@@ -22,14 +22,11 @@ export class PacienteRepository {
   }
 
   async getById(id: string): Promise<Paciente | null> {
-    const { data, error } = await this.db
-      .from("paciente")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-
-    if (error) throw error;
-    return data;
+    const result = await this.db.query(
+      `SELECT * FROM paciente WHERE id = $1`,
+      [id]
+    );
+    return result.rows[0] ?? null;
   }
 
   async create(payload: NewPaciente): Promise<Paciente> {
