@@ -85,16 +85,63 @@ export class PacienteRepository {
     return result.rows[0] ?? null;
   }
 
-  async patch(id: string, payload: UpdatePaciente): Promise<Paciente | null> {
-    const { data, error } = await this.db
-      .from("paciente")
-      .update(payload)
-      .eq("id", id)
-      .select("*")
-      .maybeSingle();
+  async patch(
+    id: string,
+    payload: UpdatePaciente
+  ): Promise<Paciente | null> {
+    const fields: string[] = [];
+    const values: unknown[] = [];
 
-    if (error) throw error;
-    return data;
+    if (payload.hospital_id !== undefined) {
+      fields.push(`hospital_id = $${values.length + 1}`);
+      values.push(payload.hospital_id);
+    }
+
+    if (payload.doctor_id !== undefined) {
+      fields.push(`doctor_id = $${values.length + 1}`);
+      values.push(payload.doctor_id);
+    }
+
+    if (payload.first_name !== undefined) {
+      fields.push(`first_name = $${values.length + 1}`);
+      values.push(payload.first_name);
+    }
+
+    if (payload.last_name !== undefined) {
+      fields.push(`last_name = $${values.length + 1}`);
+      values.push(payload.last_name);
+    }
+
+    if (payload.birth_date !== undefined) {
+      fields.push(`birth_date = $${values.length + 1}`);
+      values.push(payload.birth_date);
+    }
+
+    if (payload.condition !== undefined) {
+      fields.push(`condition = $${values.length + 1}`);
+      values.push(payload.condition);
+    }
+
+    if (payload.status !== undefined) {
+      fields.push(`status = $${values.length + 1}`);
+      values.push(payload.status);
+    }
+
+    if (fields.length === 0) {
+      return this.getById(id);
+    }
+
+    values.push(id);
+
+    const result = await this.db.query(
+      `UPDATE paciente
+       SET ${fields.join(", ")}
+       WHERE id = $${values.length}
+       RETURNING *`,
+      values
+    );
+
+    return result.rows[0] ?? null;
   }
 
   async remove(id: string): Promise<boolean> {
