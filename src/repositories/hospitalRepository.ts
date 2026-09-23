@@ -118,17 +118,15 @@ export class HospitalRepository {
     return result.rows[0] ?? null;
   }
 
-
   async remove(id: string): Promise<boolean> {
-    const { data, error } = await this.db
-      .from("hospital")
-      .delete()
-      .eq("id", id)
-      .select("id")
-      .maybeSingle();
+    const result = await this.db.query(
+      `DELETE FROM hospital
+       WHERE id = $1
+       RETURNING id`,
+      [id]
+    );
 
-    if (error) throw error;
-    return Boolean(data);
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   async query(payload: QueryPayload<HospitalFilters>): Promise<QueryResult<Hospital>> {
