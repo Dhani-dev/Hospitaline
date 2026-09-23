@@ -20,14 +20,12 @@ export class HospitalRepository {
   }
 
   async getById(id: string): Promise<Hospital | null> {
-    const { data, error } = await this.db
-      .from("hospital")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
+    const result = await this.db.query(
+      `SELECT * FROM hospital WHERE id = $1`,
+      [id]
+    );
 
-    if (error) throw error;
-    return data;
+    return result.rows[0] ?? null;
   }
 
   async create(payload: NewHospital): Promise<Hospital> {
