@@ -135,47 +135,98 @@ export class DoctorRepository {
     return result.rowCount !== null && result.rowCount > 0;
   }
 
-  async query(payload: QueryPayload<DoctorFilters>): Promise<QueryResult<Doctor>> {
-    const page = payload.page && payload.page > 0 ? payload.page : 1;
-    const pageSize = payload.pageSize && payload.pageSize > 0 ? payload.pageSize : 20;
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
+  async query(
+    payload: QueryPayload<DoctorFilters>
+  ): Promise<QueryResult<Doctor>> {
+    const page = payload.page && payload.page > 0
+      ? payload.page
+      : 1;
 
-    let request = this.db.from("doctor").select("*", { count: "exact" });
+    const pageSize = payload.pageSize && payload.pageSize > 0
+      ? payload.pageSize
+      : 20;
+
+    const offset = (page - 1) * pageSize;
+
+    const conditions: string[] = [];
+    const values: unknown[] = [];
 
     if (payload.filters?.hospital_id) {
-      request = request.eq("hospital_id", payload.filters.hospital_id);
+      values.push(payload.filters.hospital_id);
+      conditions.push(`hospital_id = $${values.length}`);
     }
+
     if (payload.filters?.first_name) {
-      request = request.ilike("first_name", `%${payload.filters.first_name}%`);
+      values.push(`%${payload.filters.first_name}%`);
+      conditions.push(`first_name ILIKE $${values.length}`);
     }
+
     if (payload.filters?.last_name) {
-      request = request.ilike("last_name", `%${payload.filters.last_name}%`);
+      values.push(`%${payload.filters.last_name}%`);
+      conditions.push(`last_name ILIKE $${values.length}`);
     }
+
     if (payload.filters?.specialty) {
-      request = request.ilike("specialty", `%${payload.filters.specialty}%`);
+      values.push(`%${payload.filters.specialty}%`);
+      conditions.push(`specialty ILIKE $${values.length}`);
     }
+
     if (payload.filters?.email) {
-      request = request.ilike("email", `%${payload.filters.email}%`);
+      values.push(`%${payload.filters.email}%`);
+      conditions.push(`email ILIKE $${values.length}`);
     }
 
-    if (payload.sort?.field) {
-      request = request.order(payload.sort.field, {
-        ascending: payload.sort.direction !== "desc"
-      });
-    } else {
-      request = request.order("created_at", { ascending: false });
-    }
+    const whereClause =
+      conditions.length > 0
+        ? `WHERE ${conditions.join(" AND ")}`
+        : "";
 
-    const { data, count, error } = await request.range(from, to);
+    const allowedSortFields = [
+      "id",
+      "hospital_id",
+      "first_name",
+      "last_name",
+      "specialty",
+      "email",
+      "created_at",
+      "updated_at"
+    ];
 
-    if (error) throw error;
+    const sortField =
+      payload.sort?.field &&
+      allowedSortFields.includes(payload.sort.field)
+        ? payload.sort.field
+        : "created_at";
+
+    const sortDirection =
+      payload.sort?.direction === "asc"
+        ? "ASC"
+        : "DESC";
+
+    const dataValues = [...values, pageSize, offset];
+
+    const dataResult = await this.db.query(
+      `SELECT *
+       FROM doctor
+       ${whereClause}
+       ORDER BY ${sortField} ${sortDirection}
+       LIMIT $${dataValues.length - 1}
+       OFFSET $${dataValues.length}`,
+      dataValues
+    );
+
+    const countResult = await this.db.query(
+      `SELECT COUNT(*)::int AS total
+       FROM doctor
+       ${whereClause}`,
+      values
+    );
 
     return {
-      data: data ?? [],
+      data: dataResult.rows,
       page,
       pageSize,
-      total: count ?? 0
+      total: countResult.rows[0]?.total ?? 0
     };
   }
 }
