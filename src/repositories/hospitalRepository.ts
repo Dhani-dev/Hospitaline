@@ -48,19 +48,32 @@ export class HospitalRepository {
 
     return result.rows[0];
   }
+ 
+  async replace(
+    id: string,
+    payload: NewHospital
+  ): Promise<Hospital | null> {
+    const result = await this.db.query(
+      `UPDATE hospital
+       SET
+         name = $1,
+         address = $2,
+         city = $3,
+         phone = $4
+       WHERE id = $5
+       RETURNING *`,
+      [
+        payload.name,
+        payload.address,
+        payload.city,
+        payload.phone,
+        id
+      ]
+    );
 
-  async replace(id: string, payload: NewHospital): Promise<Hospital | null> {
-    const { data, error } = await this.db
-      .from("hospital")
-      .update(payload)
-      .eq("id", id)
-      .select("*")
-      .maybeSingle();
-
-    if (error) throw error;
-    return data;
+    return result.rows[0] ?? null;
   }
-
+  
   async patch(id: string, payload: UpdateHospital): Promise<Hospital | null> {
     const { data, error } = await this.db
       .from("hospital")
