@@ -1,4 +1,4 @@
-import { createSupabaseClient } from "../db/supabaseClient";
+import pool from "../db/pool";
 import { DoctorRepository } from "../repositories/doctorRepository";
 import { HospitalRepository } from "../repositories/hospitalRepository";
 import { PacienteRepository } from "../repositories/pacienteRepository";
@@ -14,11 +14,9 @@ export type ServiceContainer = {
 };
 
 export function createDefaultServices(): ServiceContainer {
-  const db = createSupabaseClient();
-
-  const hospitalRepository = new HospitalRepository(db);
-  const doctorRepository = new DoctorRepository(db);
-  const pacienteRepository = new PacienteRepository(db);
+  const hospitalRepository = new HospitalRepository(pool);
+  const doctorRepository = new DoctorRepository(pool);
+  const pacienteRepository = new PacienteRepository(pool);
 
   const hospitalService = new HospitalService(hospitalRepository);
   const doctorService = new DoctorService(doctorRepository, hospitalRepository);
