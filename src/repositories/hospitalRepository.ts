@@ -129,41 +129,86 @@ export class HospitalRepository {
     return result.rowCount !== null && result.rowCount > 0;
   }
 
-  async query(payload: QueryPayload<HospitalFilters>): Promise<QueryResult<Hospital>> {
-    const page = payload.page && payload.page > 0 ? payload.page : 1;
-    const pageSize = payload.pageSize && payload.pageSize > 0 ? payload.pageSize : 20;
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
+  async query(
+    payload: QueryPayload<HospitalFilters>
+  ): Promise<QueryResult<Hospital>> {
+    const page = payload.page && payload.page > 0
+      ? payload.page
+      : 1;
 
-    let request = this.db.from("hospital").select("*", { count: "exact" });
+    const pageSize = payload.pageSize && payload.pageSize > 0
+      ? payload.pageSize
+      : 20;
+
+    const offset = (page - 1) * pageSize;
+
+    const conditions: string[] = [];
+    const values: unknown[] = [];
 
     if (payload.filters?.name) {
-      request = request.ilike("name", `%${payload.filters.name}%`);
+      values.push(`%${payload.filters.name}%`);
+      conditions.push(`name ILIKE $${values.length}`);
     }
+
     if (payload.filters?.city) {
-      request = request.ilike("city", `%${payload.filters.city}%`);
+      values.push(`%${payload.filters.city}%`);
+      conditions.push(`city ILIKE $${values.length}`);
     }
+
     if (payload.filters?.phone) {
-      request = request.ilike("phone", `%${payload.filters.phone}%`);
+      values.push(`%${payload.filters.phone}%`);
+      conditions.push(`phone ILIKE $${values.length}`);
     }
 
-    if (payload.sort?.field) {
-      request = request.order(payload.sort.field, {
-        ascending: payload.sort.direction !== "desc"
-      });
-    } else {
-      request = request.order("created_at", { ascending: false });
-    }
+    const whereClause =
+      conditions.length > 0
+        ? `WHERE ${conditions.join(" AND ")}`
+        : "";
 
-    const { data, count, error } = await request.range(from, to);
+    const allowedSortFields = [
+      "id",
+      "name",
+      "address",
+      "city",
+      "phone",
+      "created_at",
+      "updated_at"
+    ];
 
-    if (error) throw error;
+    const sortField = payload.sort?.field &&
+      allowedSortFields.includes(payload.sort.field)
+      ? payload.sort.field
+      : "created_at";
+
+    const sortDirection =
+      payload.sort?.direction === "asc"
+        ? "ASC"
+        : "DESC";
+
+    const dataValues = [...values, pageSize, offset];
+
+    const dataResult = await this.db.query(
+      `SELECT *
+       FROM hospital
+       ${whereClause}
+       ORDER BY ${sortField} ${sortDirection}
+       LIMIT $${dataValues.length - 1}
+       OFFSET $${dataValues.length}`,
+      dataValues
+    );
+
+    const countResult = await this.db.query(
+      `SELECT COUNT(*)::int AS total
+       FROM hospital
+       ${whereClause}`,
+      values
+    );
 
     return {
-      data: data ?? [],
+      data: dataResult.rows,
       page,
       pageSize,
-      total: count ?? 0
+      total: countResult.rows[0]?.total ?? 0
     };
   }
 }
