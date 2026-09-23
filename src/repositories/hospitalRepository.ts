@@ -125,7 +125,6 @@ export class HospitalRepository {
        RETURNING id`,
       [id]
     );
-
     return result.rowCount !== null && result.rowCount > 0;
   }
 
