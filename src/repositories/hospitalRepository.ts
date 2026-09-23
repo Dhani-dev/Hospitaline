@@ -1,4 +1,4 @@
-import { DbClient } from "../db/supabaseClient";
+import { Pool } from "pg";
 import { Hospital, NewHospital, UpdateHospital } from "../types/entities";
 import { QueryPayload, QueryResult } from "../types/query";
 
@@ -9,12 +9,14 @@ export type HospitalFilters = {
 };
 
 export class HospitalRepository {
-  constructor(private readonly db: DbClient) {}
+  constructor(private readonly db: Pool) {}
 
   async list(): Promise<Hospital[]> {
-    const { data, error } = await this.db.from("hospital").select("*");
-    if (error) throw error;
-    return data ?? [];
+    const result = await this.db.query(
+      `SELECT * FROM hospital`
+    );
+
+    return result.rows;
   }
 
   async getById(id: string): Promise<Hospital | null> {
