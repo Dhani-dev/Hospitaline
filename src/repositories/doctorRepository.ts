@@ -77,16 +77,52 @@ export class DoctorRepository {
     return result.rows[0] ?? null;
   }
 
-  async patch(id: string, payload: UpdateDoctor): Promise<Doctor | null> {
-    const { data, error } = await this.db
-      .from("doctor")
-      .update(payload)
-      .eq("id", id)
-      .select("*")
-      .maybeSingle();
+  async patch(
+    id: string,
+    payload: UpdateDoctor
+  ): Promise<Doctor | null> {
+    const fields: string[] = [];
+    const values: unknown[] = [];
 
-    if (error) throw error;
-    return data;
+    if (payload.hospital_id !== undefined) {
+      fields.push(`hospital_id = $${values.length + 1}`);
+      values.push(payload.hospital_id);
+    }
+
+    if (payload.first_name !== undefined) {
+      fields.push(`first_name = $${values.length + 1}`);
+      values.push(payload.first_name);
+    }
+
+    if (payload.last_name !== undefined) {
+      fields.push(`last_name = $${values.length + 1}`);
+      values.push(payload.last_name);
+    }
+
+    if (payload.specialty !== undefined) {
+      fields.push(`specialty = $${values.length + 1}`);
+      values.push(payload.specialty);
+    }
+
+    if (payload.email !== undefined) {
+      fields.push(`email = $${values.length + 1}`);
+      values.push(payload.email);
+    }
+
+    if (fields.length === 0) {
+      return this.getById(id);
+    }
+
+    values.push(id);
+
+    const result = await this.db.query(
+      `UPDATE doctor
+       SET ${fields.join(", ")}
+       WHERE id = $${values.length}
+       RETURNING *`,
+      values
+    );
+    return result.rows[0] ?? null;
   }
 
   async remove(id: string): Promise<boolean> {
