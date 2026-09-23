@@ -30,14 +30,25 @@ export class DoctorRepository {
   }
 
   async create(payload: NewDoctor): Promise<Doctor> {
-    const { data, error } = await this.db
-      .from("doctor")
-      .insert(payload)
-      .select("*")
-      .single();
-
-    if (error) throw error;
-    return data;
+    const result = await this.db.query(
+      `INSERT INTO doctor (
+        hospital_id,
+        first_name,
+        last_name,
+        specialty,
+        email
+      )
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING *`,
+      [
+        payload.hospital_id,
+        payload.first_name,
+        payload.last_name,
+        payload.specialty,
+        payload.email
+      ]
+    );
+    return result.rows[0];
   }
 
   async replace(id: string, payload: NewDoctor): Promise<Doctor | null> {
