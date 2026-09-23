@@ -73,18 +73,51 @@ export class HospitalRepository {
 
     return result.rows[0] ?? null;
   }
-  
-  async patch(id: string, payload: UpdateHospital): Promise<Hospital | null> {
-    const { data, error } = await this.db
-      .from("hospital")
-      .update(payload)
-      .eq("id", id)
-      .select("*")
-      .maybeSingle();
 
-    if (error) throw error;
-    return data;
+  async patch(
+    id: string,
+    payload: UpdateHospital
+  ): Promise<Hospital | null> {
+    const fields: string[] = [];
+    const values: unknown[] = [];
+
+    if (payload.name !== undefined) {
+      fields.push(`name = $${values.length + 1}`);
+      values.push(payload.name);
+    }
+
+    if (payload.address !== undefined) {
+      fields.push(`address = $${values.length + 1}`);
+      values.push(payload.address);
+    }
+
+    if (payload.city !== undefined) {
+      fields.push(`city = $${values.length + 1}`);
+      values.push(payload.city);
+    }
+
+    if (payload.phone !== undefined) {
+      fields.push(`phone = $${values.length + 1}`);
+      values.push(payload.phone);
+    }
+
+    if (fields.length === 0) {
+      return this.getById(id);
+    }
+
+    values.push(id);
+
+    const result = await this.db.query(
+      `UPDATE hospital
+       SET ${fields.join(", ")}
+       WHERE id = $${values.length}
+       RETURNING *`,
+      values
+    );
+
+    return result.rows[0] ?? null;
   }
+
 
   async remove(id: string): Promise<boolean> {
     const { data, error } = await this.db
