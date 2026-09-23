@@ -1,11 +1,14 @@
 import { Pool } from "pg";
+import { getEnvConfig } from "../config/env";
+
+const env = getEnvConfig();
 
 const pool = new Pool({
-  host: process.env.DB_HOST ?? "127.0.0.1",
-  port: Number(process.env.DB_PORT ?? 5432),
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD
+  host: env.dbHost,
+  port: env.dbPort,
+  database: env.dbName,
+  user: env.dbUser,
+  password: env.dbPassword
 });
 
 export default pool;
