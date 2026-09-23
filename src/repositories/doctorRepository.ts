@@ -1,4 +1,4 @@
-import { DbClient } from "../db/supabaseClient";
+import { Pool } from "pg";
 import { Doctor, NewDoctor, UpdateDoctor } from "../types/entities";
 import { QueryPayload, QueryResult } from "../types/query";
 
@@ -11,12 +11,13 @@ export type DoctorFilters = {
 };
 
 export class DoctorRepository {
-  constructor(private readonly db: DbClient) {}
+  constructor(private readonly db: Pool) {}
 
   async list(): Promise<Doctor[]> {
-    const { data, error } = await this.db.from("doctor").select("*");
-    if (error) throw error;
-    return data ?? [];
+    const result = await this.db.query(
+      `SELECT * FROM doctor`
+    );
+    return result.rows;
   }
 
   async getById(id: string): Promise<Doctor | null> {
