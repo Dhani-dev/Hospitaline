@@ -55,16 +55,34 @@ export class PacienteRepository {
     return result.rows[0];
   }
 
-  async replace(id: string, payload: NewPaciente): Promise<Paciente | null> {
-    const { data, error } = await this.db
-      .from("paciente")
-      .update(payload)
-      .eq("id", id)
-      .select("*")
-      .maybeSingle();
-
-    if (error) throw error;
-    return data;
+  async replace(
+    id: string,
+    payload: NewPaciente
+  ): Promise<Paciente | null> {
+    const result = await this.db.query(
+      `UPDATE paciente
+       SET
+         hospital_id = $1,
+         doctor_id = $2,
+         first_name = $3,
+         last_name = $4,
+         birth_date = $5,
+         condition = $6,
+         status = $7
+       WHERE id = $8
+       RETURNING *`,
+      [
+        payload.hospital_id,
+        payload.doctor_id,
+        payload.first_name,
+        payload.last_name,
+        payload.birth_date,
+        payload.condition,
+        payload.status,
+        id
+      ]
+    );
+    return result.rows[0] ?? null;
   }
 
   async patch(id: string, payload: UpdatePaciente): Promise<Paciente | null> {
