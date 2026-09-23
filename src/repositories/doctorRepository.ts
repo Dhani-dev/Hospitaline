@@ -126,15 +126,13 @@ export class DoctorRepository {
   }
 
   async remove(id: string): Promise<boolean> {
-    const { data, error } = await this.db
-      .from("doctor")
-      .delete()
-      .eq("id", id)
-      .select("id")
-      .maybeSingle();
-
-    if (error) throw error;
-    return Boolean(data);
+    const result = await this.db.query(
+      `DELETE FROM doctor
+       WHERE id = $1
+       RETURNING id`,
+      [id]
+    );
+    return result.rowCount !== null && result.rowCount > 0;
   }
 
   async query(payload: QueryPayload<DoctorFilters>): Promise<QueryResult<Doctor>> {
