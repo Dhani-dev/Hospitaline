@@ -29,14 +29,24 @@ export class HospitalRepository {
   }
 
   async create(payload: NewHospital): Promise<Hospital> {
-    const { data, error } = await this.db
-      .from("hospital")
-      .insert(payload)
-      .select("*")
-      .single();
+    const result = await this.db.query(
+      `INSERT INTO hospital (
+        name,
+        address,
+        city,
+        phone
+      )
+      VALUES ($1, $2, $3, $4)
+      RETURNING *`,
+      [
+        payload.name,
+        payload.address,
+        payload.city,
+        payload.phone
+      ]
+    );
 
-    if (error) throw error;
-    return data;
+    return result.rows[0];
   }
 
   async replace(id: string, payload: NewHospital): Promise<Hospital | null> {
