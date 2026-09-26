@@ -6,6 +6,8 @@ import { DoctorService } from "../services/doctorService";
 import { HospitalService } from "../services/hospitalService";
 import { PacienteService } from "../services/pacienteService";
 import { IDoctorService, IHospitalService, IPacienteService } from "../services/contracts";
+import { getEnvConfig } from "../config/env";
+import { HttpExternalEntitiesClient } from "../integrations/externalEntitiesClient";
 
 export type ServiceContainer = {
   hospitalService: IHospitalService;
@@ -17,8 +19,16 @@ export function createDefaultServices(): ServiceContainer {
   const hospitalRepository = new HospitalRepository(pool);
   const doctorRepository = new DoctorRepository(pool);
   const pacienteRepository = new PacienteRepository(pool);
+  const env = getEnvConfig();
+  const externalEntitiesClient = new HttpExternalEntitiesClient(
+    env.usersApiUrl,
+    env.entrenadorApiUrl
+  );
 
-  const hospitalService = new HospitalService(hospitalRepository);
+  const hospitalService = new HospitalService(
+    hospitalRepository,
+    externalEntitiesClient
+  );
   const doctorService = new DoctorService(doctorRepository, hospitalRepository);
   const pacienteService = new PacienteService(
     pacienteRepository,

@@ -2,18 +2,33 @@ import { HospitalRepository } from "../repositories/hospitalRepository";
 import { NewHospital, UpdateHospital } from "../types/entities";
 import { QueryPayload, QueryResult } from "../types/query";
 import { Hospital } from "../types/entities";
+import { HospitalDetails } from "../types/entities";
 import { HospitalFilters } from "../repositories/hospitalRepository";
 import { IHospitalService } from "./contracts";
+import { ExternalEntitiesClient } from "../integrations/externalEntitiesClient";
 
 export class HospitalService implements IHospitalService {
-  constructor(private readonly hospitalRepository: HospitalRepository) {}
+  constructor(
+    private readonly hospitalRepository: HospitalRepository,
+    private readonly externalEntitiesClient?: ExternalEntitiesClient
+  ) {}
 
   list(): Promise<Hospital[]> {
     return this.hospitalRepository.list();
   }
 
-  getById(id: string): Promise<Hospital | null> {
-    return this.hospitalRepository.getById(id);
+  async getById(id: string): Promise<HospitalDetails | null> {
+    const hospital = await this.hospitalRepository.getById(id);
+    if (!hospital || !this.externalEntitiesClient) {
+      return hospital as HospitalDetails | null;
+    }
+
+    const [user, entrenador] = await Promise.all([
+      this.externalEntitiesClient.getUserById(id),
+      this.externalEntitiesClient.getEntrenadorById(id)
+    ]);
+
+    return { ...hospital, user, entrenador };
   }
 
   create(payload: NewHospital): Promise<Hospital> {

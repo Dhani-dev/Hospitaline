@@ -1,6 +1,7 @@
 import { FastifyReply } from "fastify";
 import { ZodError } from "zod";
 import { HttpError } from "../errors/httpError";
+import { ExternalApiError } from "../integrations/externalEntitiesClient";
 
 export function handleControllerError(error: unknown, reply: FastifyReply): FastifyReply {
   if (error instanceof ZodError) {
@@ -12,6 +13,10 @@ export function handleControllerError(error: unknown, reply: FastifyReply): Fast
 
   if (error instanceof HttpError) {
     return reply.status(error.statusCode).send({ message: error.message });
+  }
+
+  if (error instanceof ExternalApiError) {
+    return reply.status(502).send({ message: error.message });
   }
 
   return reply.status(500).send({ message: "Internal server error" });

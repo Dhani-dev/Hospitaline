@@ -8,6 +8,11 @@ export type Hospital = {
   updated_at: string;
 };
 
+export type HospitalDetails = Hospital & {
+  user: Record<string, unknown> | null;
+  entrenador: Record<string, unknown> | null;
+};
+
 export type Doctor = {
   id: string;
   hospital_id: string;

@@ -65,9 +65,17 @@ SUPABASE_URL=...
 SUPABASE_PUBLISHABLE_KEY=...
 SUPABASE_SECRET_KEY=...
 SUPABASE_JWKS_URL=...
+USERS_API_URL=https://your-azure-users-api.example.com/api/users
+ENTRENADOR_API_URL=https://your-aws-entrenador-api.example.com/entrenador
 ```
 
 No subir archivos `.env` con credenciales reales al repositorio.
+
+`GET /api/v1/hospitals/:id` y `GET /api/v2/hospitals/:id` enriquecen el hospital
+con las entidades remotas `user` y `entrenador`. Las URLs base se configuran con
+`USERS_API_URL` y `ENTRENADOR_API_URL`; cada una debe apuntar al recurso sin el
+identificador final. Un error de las APIs remotas se devuelve como error del
+endpoint, mientras que una entidad remota inexistente se representa como `null`.
 
 ---
 

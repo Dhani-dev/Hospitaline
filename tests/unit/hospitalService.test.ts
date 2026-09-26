@@ -38,4 +38,34 @@ describe("HospitalService", () => {
     expect(query).toHaveBeenCalledOnce();
     expect(result.total).toBe(0);
   });
+
+  it("enriches getById with users and entrenador entities", async () => {
+    const hospital = {
+      id: "1",
+      name: "Central",
+      address: "A",
+      city: "Bogota",
+      phone: "1234567",
+      created_at: "2026-01-01",
+      updated_at: "2026-01-01"
+    };
+    const repository = {
+      getById: vi.fn().mockResolvedValue(hospital)
+    } as any;
+    const externalEntitiesClient = {
+      getUserById: vi.fn().mockResolvedValue({ id: 1, name: "User" }),
+      getEntrenadorById: vi.fn().mockResolvedValue({ id: "1", nombre: "Ash" })
+    };
+
+    const service = new HospitalService(repository, externalEntitiesClient);
+    const result = await service.getById("1");
+
+    expect(result).toEqual({
+      ...hospital,
+      user: { id: 1, name: "User" },
+      entrenador: { id: "1", nombre: "Ash" }
+    });
+    expect(externalEntitiesClient.getUserById).toHaveBeenCalledWith("1");
+    expect(externalEntitiesClient.getEntrenadorById).toHaveBeenCalledWith("1");
+  });
 });

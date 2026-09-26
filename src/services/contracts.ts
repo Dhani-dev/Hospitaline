@@ -3,11 +3,11 @@ import { QueryPayload, QueryResult } from "../types/query";
 import { DoctorFilters } from "../repositories/doctorRepository";
 import { HospitalFilters } from "../repositories/hospitalRepository";
 import { PacienteFilters } from "../repositories/pacienteRepository";
-import { Doctor, Hospital, Paciente } from "../types/entities";
+import { Doctor, Hospital, HospitalDetails, Paciente } from "../types/entities";
 
 export interface IHospitalService {
   list(): Promise<Hospital[]>;
-  getById(id: string): Promise<Hospital | null>;
+  getById(id: string): Promise<HospitalDetails | null>;
   create(payload: NewHospital): Promise<Hospital>;
   replace(id: string, payload: NewHospital): Promise<Hospital | null>;
   patch(id: string, payload: UpdateHospital): Promise<Hospital | null>;
