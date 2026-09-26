@@ -11,7 +11,7 @@ export const hospitalRoutes = (
 
     fastify.get("/hospitals", controller.list);
     if (version === "v2") {
-      fastify.get("/hospitals/last", controller.list);
+      fastify.get("/hospitals/last", controller.getLast);
     }
     fastify.get(
       "/hospitals/:id",

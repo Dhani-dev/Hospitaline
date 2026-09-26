@@ -3,12 +3,16 @@ import { ServiceContainer } from "../bootstrap/createServices";
 import { PacienteController } from "../controllers/pacienteController";
 
 export const pacienteRoutes = (
-  services: ServiceContainer
+  services: ServiceContainer,
+  version: "v1" | "v2" = "v1"
 ): FastifyPluginAsync => {
   return async (fastify) => {
     const controller = new PacienteController(services.pacienteService);
 
     fastify.get("/pacientes", controller.list);
+    if (version === "v2") {
+      fastify.get("/pacientes/last", controller.getLast);
+    }
     fastify.get("/pacientes/:id", controller.getById);
     fastify.post("/pacientes", controller.create);
     fastify.put("/pacientes/:id", controller.replace);

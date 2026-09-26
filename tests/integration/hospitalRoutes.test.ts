@@ -25,6 +25,7 @@ describe("Hospital routes", () => {
       hospitalService: {
         list: async () => Array.from(db.values()),
         getById: async (id) => db.get(id) ?? null,
+        getLast: async () => Array.from(db.values()).at(-1) ?? null,
         getByIdV2: async (id, traceId) => {
           const local = db.get(id);
           if (!local) return null;
@@ -167,6 +168,24 @@ describe("Hospital routes", () => {
 
     const res = await app.inject({ method: "DELETE", url: `/api/v1/hospitals/${id}` });
     expect(res.statusCode).toBe(204);
+  });
+
+  it("GET /api/v2/hospitals/last returns the last local hospital without peers", async () => {
+    const res = await app.inject({ method: "GET", url: "/api/v2/hospitals/last" });
+    const body = JSON.parse(res.payload);
+
+    expect(res.statusCode).toBe(200);
+    expect(body.api).toBe("hospitaline");
+    expect(body.version).toBe("2.0.0");
+    expect(body.entity).toBe("hospital");
+    expect(body.local).toEqual(
+      expect.objectContaining({
+        id: expect.any(String),
+        name: expect.any(String)
+      })
+    );
+    expect(body.peers).toBeUndefined();
+    expect(typeof body.trace_id).toBe("string");
   });
 
   it("returns 404 when hospital is missing", async () => {

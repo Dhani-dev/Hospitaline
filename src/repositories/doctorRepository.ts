@@ -29,6 +29,14 @@ export class DoctorRepository {
     return result.rows[0] ?? null;
   }
 
+  async getLast(): Promise<Doctor | null> {
+    const result = await this.db.query(
+      `SELECT * FROM doctor ORDER BY created_at DESC, id DESC LIMIT 1`
+    );
+
+    return result.rows[0] ?? null;
+  }
+
   async create(payload: NewDoctor): Promise<Doctor> {
     const result = await this.db.query(
       `INSERT INTO doctor (

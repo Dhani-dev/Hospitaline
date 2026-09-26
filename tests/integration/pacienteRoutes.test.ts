@@ -30,6 +30,7 @@ describe("Paciente routes", () => {
       pacienteService: {
         list: async () => Array.from(db.values()),
         getById: async (id) => db.get(id) ?? null,
+        getLast: async () => Array.from(db.values()).at(-1) ?? null,
         create: async (payload) => {
           const entity: Paciente = {
             id: crypto.randomUUID(),

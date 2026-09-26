@@ -19,6 +19,10 @@ export class DoctorService implements IDoctorService {
     return this.doctorRepository.getById(id);
   }
 
+  getLast(): Promise<Doctor | null> {
+    return this.doctorRepository.getLast();
+  }
+
   async create(payload: NewDoctor): Promise<Doctor> {
     const hospital = await this.hospitalRepository.getById(payload.hospital_id);
     if (!hospital) {

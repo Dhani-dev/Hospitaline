@@ -20,6 +20,10 @@ export class HospitalService implements IHospitalService {
     return this.hospitalRepository.getById(id);
   }
 
+  getLast(): Promise<Hospital | null> {
+    return this.hospitalRepository.getLast();
+  }
+
   async getByIdV2(id: string, traceId: string): Promise<HospitalV2Response | null> {
     const hospital = await this.hospitalRepository.getById(id);
     if (!hospital) {

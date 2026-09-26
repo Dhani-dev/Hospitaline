@@ -45,6 +45,21 @@ export class HospitalController {
     }
   };
 
+  getLast = async (request: FastifyRequest, reply: FastifyReply) => {
+    try {
+      const local = await this.hospitalService.getLast();
+      return reply.status(200).send({
+        api: "hospitaline",
+        version: "2.0.0",
+        trace_id: request.traceId,
+        entity: "hospital",
+        local
+      });
+    } catch (error) {
+      return handleControllerError(error, reply);
+    }
+  };
+
   getById = async (
     request: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply

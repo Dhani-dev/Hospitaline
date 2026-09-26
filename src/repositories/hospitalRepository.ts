@@ -28,6 +28,14 @@ export class HospitalRepository {
     return result.rows[0] ?? null;
   }
 
+  async getLast(): Promise<Hospital | null> {
+    const result = await this.db.query(
+      `SELECT * FROM hospital ORDER BY created_at DESC, id DESC LIMIT 1`
+    );
+
+    return result.rows[0] ?? null;
+  }
+
   async create(payload: NewHospital): Promise<Hospital> {
     const result = await this.db.query(
       `INSERT INTO hospital (

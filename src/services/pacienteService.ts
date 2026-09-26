@@ -21,6 +21,10 @@ export class PacienteService implements IPacienteService {
     return this.pacienteRepository.getById(id);
   }
 
+  getLast(): Promise<Paciente | null> {
+    return this.pacienteRepository.getLast();
+  }
+
   async create(payload: NewPaciente): Promise<Paciente> {
     await this.assertHospital(payload.hospital_id);
     await this.assertDoctor(payload.doctor_id, payload.hospital_id);

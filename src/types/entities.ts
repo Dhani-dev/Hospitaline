@@ -8,23 +8,37 @@ export type Hospital = {
   updated_at: string;
 };
 
-export type HospitalV2Response = {
-  api: "hospitaline";
-  version: "2.0.0";
-  trace_id: string;
-  entity: "hospital";
-  local: Hospital;
-  peers: {
-    "biblio-express": PeerResponse;
-    pokenetes: PeerResponse;
-  };
-};
+export type LocalEntityName = "hospital" | "doctor" | "paciente";
 
 export type PeerResponse = {
   live: boolean;
   entity: "users" | "entrenador";
   data: Record<string, unknown> | null;
 };
+
+export type LastLocalResponse<T> = {
+  api: "hospitaline";
+  version: "2.0.0";
+  trace_id: string;
+  entity: LocalEntityName;
+  local: T | null;
+};
+
+export type EntityV2Response<T> = {
+  api: "hospitaline";
+  version: "2.0.0";
+  trace_id: string;
+  entity: LocalEntityName;
+  local: T;
+  peers: {
+    "biblio-express": PeerResponse;
+    pokenetes: PeerResponse;
+  };
+};
+
+export type HospitalV2Response = EntityV2Response<Hospital>;
+export type DoctorV2Response = EntityV2Response<Doctor>;
+export type PacienteV2Response = EntityV2Response<Paciente>;
 
 export type Doctor = {
   id: string;

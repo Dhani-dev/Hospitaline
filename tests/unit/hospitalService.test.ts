@@ -5,6 +5,7 @@ describe("HospitalService", () => {
   it("delegates all operations to repository", async () => {
     const list = vi.fn().mockResolvedValue([]);
     const getById = vi.fn().mockResolvedValue(null);
+    const getLast = vi.fn().mockResolvedValue(null);
     const create = vi.fn().mockResolvedValue({ id: "1" });
     const replace = vi.fn().mockResolvedValue({ id: "1" });
     const patch = vi.fn().mockResolvedValue({ id: "1" });
@@ -13,6 +14,7 @@ describe("HospitalService", () => {
     const repo = {
       list,
       getById,
+      getLast,
       create,
       replace,
       patch,
@@ -23,6 +25,7 @@ describe("HospitalService", () => {
     const service = new HospitalService(repo);
     await service.list();
     await service.getById("1");
+    await service.getLast();
     await service.create({ name: "A", address: "B", city: "C", phone: "1234567" });
     await service.replace("1", { name: "A", address: "B", city: "C", phone: "1234567" });
     await service.patch("1", { city: "D" });
@@ -31,6 +34,7 @@ describe("HospitalService", () => {
 
     expect(list).toHaveBeenCalledOnce();
     expect(getById).toHaveBeenCalledWith("1");
+    expect(getLast).toHaveBeenCalledOnce();
     expect(create).toHaveBeenCalledOnce();
     expect(replace).toHaveBeenCalledOnce();
     expect(patch).toHaveBeenCalledOnce();
