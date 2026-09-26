@@ -1,8 +1,7 @@
 import { HospitalRepository } from "../repositories/hospitalRepository";
 import { NewHospital, UpdateHospital } from "../types/entities";
 import { QueryPayload, QueryResult } from "../types/query";
-import { Hospital } from "../types/entities";
-import { HospitalDetails } from "../types/entities";
+import { Hospital, HospitalV2Response } from "../types/entities";
 import { HospitalFilters } from "../repositories/hospitalRepository";
 import { IHospitalService } from "./contracts";
 import { ExternalEntitiesClient } from "../integrations/externalEntitiesClient";
@@ -17,18 +16,47 @@ export class HospitalService implements IHospitalService {
     return this.hospitalRepository.list();
   }
 
-  async getById(id: string): Promise<HospitalDetails | null> {
+  getById(id: string): Promise<Hospital | null> {
+    return this.hospitalRepository.getById(id);
+  }
+
+  async getByIdV2(id: string, traceId: string): Promise<HospitalV2Response | null> {
     const hospital = await this.hospitalRepository.getById(id);
-    if (!hospital || !this.externalEntitiesClient) {
-      return hospital as HospitalDetails | null;
+    if (!hospital) {
+      return null;
     }
 
-    const [user, entrenador] = await Promise.all([
-      this.externalEntitiesClient.getUserById(id),
-      this.externalEntitiesClient.getEntrenadorById(id)
+    const peers = await Promise.all([
+      this.getPeer("users", this.externalEntitiesClient?.getLastUser),
+      this.getPeer("entrenador", this.externalEntitiesClient?.getLastEntrenador)
     ]);
 
-    return { ...hospital, user, entrenador };
+    return {
+      api: "hospitaline",
+      version: "2.0.0",
+      trace_id: traceId,
+      entity: "hospital",
+      local: hospital,
+      peers: {
+        "biblio-express": peers[0],
+        pokenetes: peers[1]
+      }
+    };
+  }
+
+  private async getPeer(
+    entity: "users" | "entrenador",
+    loader?: () => Promise<Record<string, unknown>>
+  ) {
+    if (!loader) {
+      return { live: false, entity, data: null };
+    }
+
+    try {
+      return { live: true, entity, data: await loader() };
+    } catch {
+      return { live: false, entity, data: null };
+    }
   }
 
   create(payload: NewHospital): Promise<Hospital> {

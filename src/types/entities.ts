@@ -8,9 +8,22 @@ export type Hospital = {
   updated_at: string;
 };
 
-export type HospitalDetails = Hospital & {
-  user: Record<string, unknown> | null;
-  entrenador: Record<string, unknown> | null;
+export type HospitalV2Response = {
+  api: "hospitaline";
+  version: "2.0.0";
+  trace_id: string;
+  entity: "hospital";
+  local: Hospital;
+  peers: {
+    "biblio-express": PeerResponse;
+    pokenetes: PeerResponse;
+  };
+};
+
+export type PeerResponse = {
+  live: boolean;
+  entity: "users" | "entrenador";
+  data: Record<string, unknown> | null;
 };
 
 export type Doctor = {

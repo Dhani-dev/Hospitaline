@@ -25,6 +25,21 @@ describe("Hospital routes", () => {
       hospitalService: {
         list: async () => Array.from(db.values()),
         getById: async (id) => db.get(id) ?? null,
+        getByIdV2: async (id, traceId) => {
+          const local = db.get(id);
+          if (!local) return null;
+          return {
+            api: "hospitaline",
+            version: "2.0.0",
+            trace_id: traceId,
+            entity: "hospital",
+            local,
+            peers: {
+              "biblio-express": { live: false, entity: "users", data: null },
+              pokenetes: { live: false, entity: "entrenador", data: null }
+            }
+          };
+        },
         create: async (payload) => {
           const entity: Hospital = {
             id: crypto.randomUUID(),

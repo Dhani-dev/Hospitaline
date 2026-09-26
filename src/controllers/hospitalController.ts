@@ -60,6 +60,24 @@ export class HospitalController {
     }
   };
 
+  getByIdV2 = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) => {
+    try {
+      const hospital = await this.hospitalService.getByIdV2(
+        request.params.id,
+        request.traceId
+      );
+      if (!hospital) {
+        return reply.status(404).send({ message: "Hospital not found" });
+      }
+      return reply.status(200).send(hospital);
+    } catch (error) {
+      return handleControllerError(error, reply);
+    }
+  };
+
   create = async (
     request: FastifyRequest<{ Body: unknown }>,
     reply: FastifyReply

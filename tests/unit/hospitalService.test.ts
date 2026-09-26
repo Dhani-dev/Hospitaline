@@ -39,7 +39,7 @@ describe("HospitalService", () => {
     expect(result.total).toBe(0);
   });
 
-  it("enriches getById with users and entrenador entities", async () => {
+  it("returns the v2 hospital with live peer data", async () => {
     const hospital = {
       id: "1",
       name: "Central",
@@ -53,19 +53,25 @@ describe("HospitalService", () => {
       getById: vi.fn().mockResolvedValue(hospital)
     } as any;
     const externalEntitiesClient = {
-      getUserById: vi.fn().mockResolvedValue({ id: 1, name: "User" }),
-      getEntrenadorById: vi.fn().mockResolvedValue({ id: "1", nombre: "Ash" })
+      getLastUser: vi.fn().mockResolvedValue({ id: 1, name: "User" }),
+      getLastEntrenador: vi.fn().mockResolvedValue({ id: "1", nombre: "Ash" })
     };
 
     const service = new HospitalService(repository, externalEntitiesClient);
-    const result = await service.getById("1");
+    const result = await service.getByIdV2("1", "trace-1");
 
     expect(result).toEqual({
-      ...hospital,
-      user: { id: 1, name: "User" },
-      entrenador: { id: "1", nombre: "Ash" }
+      api: "hospitaline",
+      version: "2.0.0",
+      trace_id: "trace-1",
+      entity: "hospital",
+      local: hospital,
+      peers: {
+        "biblio-express": { live: true, entity: "users", data: { id: 1, name: "User" } },
+        pokenetes: { live: true, entity: "entrenador", data: { id: "1", nombre: "Ash" } }
+      }
     });
-    expect(externalEntitiesClient.getUserById).toHaveBeenCalledWith("1");
-    expect(externalEntitiesClient.getEntrenadorById).toHaveBeenCalledWith("1");
+    expect(externalEntitiesClient.getLastUser).toHaveBeenCalledOnce();
+    expect(externalEntitiesClient.getLastEntrenador).toHaveBeenCalledOnce();
   });
 });

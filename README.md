@@ -71,11 +71,29 @@ ENTRENADOR_API_URL=https://your-aws-entrenador-api.example.com/entrenador
 
 No subir archivos `.env` con credenciales reales al repositorio.
 
-`GET /api/v1/hospitals/:id` y `GET /api/v2/hospitals/:id` enriquecen el hospital
-con las entidades remotas `user` y `entrenador`. Las URLs base se configuran con
-`USERS_API_URL` y `ENTRENADOR_API_URL`; cada una debe apuntar al recurso sin el
-identificador final. Un error de las APIs remotas se devuelve como error del
-endpoint, mientras que una entidad remota inexistente se representa como `null`.
+`GET /api/v1/hospitals/:id` devuelve únicamente el hospital local. En v2,
+`GET /api/v2/hospitals/last` devuelve el último hospital local sin peers y
+`GET /api/v2/hospitals/:id` devuelve el hospital local junto con el último
+`users` de Biblio Express y el último `entrenador` de Pokenetes:
+
+```json
+{
+  "api": "hospitaline",
+  "version": "2.0.0",
+  "trace_id": "...",
+  "entity": "hospital",
+  "local": { "id": "...", "name": "Central" },
+  "peers": {
+    "biblio-express": { "live": true, "entity": "users", "data": {} },
+    "pokenetes": { "live": true, "entity": "entrenador", "data": {} }
+  }
+}
+```
+
+Las URLs base se configuran con `USERS_API_URL` y `ENTRENADOR_API_URL`; cada
+una debe apuntar al recurso remoto sin `/last`. El cliente intenta primero
+`.../last` y usa el último elemento del listado como fallback. Si un peer falla,
+`local` continúa disponible y el peer se marca con `live: false`.
 
 ---
 

@@ -3,11 +3,12 @@ import { QueryPayload, QueryResult } from "../types/query";
 import { DoctorFilters } from "../repositories/doctorRepository";
 import { HospitalFilters } from "../repositories/hospitalRepository";
 import { PacienteFilters } from "../repositories/pacienteRepository";
-import { Doctor, Hospital, HospitalDetails, Paciente } from "../types/entities";
+import { Doctor, Hospital, HospitalV2Response, Paciente } from "../types/entities";
 
 export interface IHospitalService {
   list(): Promise<Hospital[]>;
-  getById(id: string): Promise<HospitalDetails | null>;
+  getById(id: string): Promise<Hospital | null>;
+  getByIdV2(id: string, traceId: string): Promise<HospitalV2Response | null>;
   create(payload: NewHospital): Promise<Hospital>;
   replace(id: string, payload: NewHospital): Promise<Hospital | null>;
   patch(id: string, payload: UpdateHospital): Promise<Hospital | null>;
