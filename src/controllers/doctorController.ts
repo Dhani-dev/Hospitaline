@@ -78,6 +78,24 @@ export class DoctorController {
     }
   };
 
+  getByIdV2 = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) => {
+    try {
+      const doctor = await this.doctorService.getByIdV2(
+        request.params.id,
+        request.traceId
+      );
+      if (!doctor) {
+        return reply.status(404).send({ message: "Doctor not found" });
+      }
+      return reply.status(200).send(doctor);
+    } catch (error) {
+      return handleControllerError(error, reply);
+    }
+  };
+
   create = async (
     request: FastifyRequest<{ Body: unknown }>,
     reply: FastifyReply

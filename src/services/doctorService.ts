@@ -1,14 +1,17 @@
 import { HospitalRepository } from "../repositories/hospitalRepository";
 import { DoctorRepository, DoctorFilters } from "../repositories/doctorRepository";
-import { NewDoctor, Doctor, UpdateDoctor } from "../types/entities";
+import { NewDoctor, Doctor, DoctorV2Response, UpdateDoctor } from "../types/entities";
 import { QueryPayload, QueryResult } from "../types/query";
 import { HttpError } from "../errors/httpError";
 import { IDoctorService } from "./contracts";
+import { ExternalEntitiesClient } from "../integrations/externalEntitiesClient";
+import { buildEntityV2Response } from "../integrations/v2Response";
 
 export class DoctorService implements IDoctorService {
   constructor(
     private readonly doctorRepository: DoctorRepository,
-    private readonly hospitalRepository: HospitalRepository
+    private readonly hospitalRepository: HospitalRepository,
+    private readonly externalEntitiesClient?: ExternalEntitiesClient
   ) {}
 
   list(): Promise<Doctor[]> {
@@ -21,6 +24,20 @@ export class DoctorService implements IDoctorService {
 
   getLast(): Promise<Doctor | null> {
     return this.doctorRepository.getLast();
+  }
+
+  async getByIdV2(id: string, traceId: string): Promise<DoctorV2Response | null> {
+    const doctor = await this.doctorRepository.getById(id);
+    if (!doctor) {
+      return null;
+    }
+
+    return buildEntityV2Response(
+      "doctor",
+      doctor,
+      traceId,
+      this.externalEntitiesClient
+    );
   }
 
   async create(payload: NewDoctor): Promise<Doctor> {

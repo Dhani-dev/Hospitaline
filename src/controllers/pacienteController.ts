@@ -81,6 +81,24 @@ export class PacienteController {
     }
   };
 
+  getByIdV2 = async (
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) => {
+    try {
+      const paciente = await this.pacienteService.getByIdV2(
+        request.params.id,
+        request.traceId
+      );
+      if (!paciente) {
+        return reply.status(404).send({ message: "Paciente not found" });
+      }
+      return reply.status(200).send(paciente);
+    } catch (error) {
+      return handleControllerError(error, reply);
+    }
+  };
+
   create = async (
     request: FastifyRequest<{ Body: unknown }>,
     reply: FastifyReply

@@ -1,8 +1,20 @@
+import { PeerResponse } from "../types/entities";
+
 export type ExternalEntity = Record<string, unknown>;
 
+export interface PeerTarget {
+  baseUrl: string;
+  lastPath: string;
+  listPath: string;
+}
+
 export interface ExternalEntitiesClient {
-  getLastUser(): Promise<ExternalEntity>;
-  getLastEntrenador(): Promise<ExternalEntity>;
+  getLastUser(traceId: string): Promise<PeerResponse>;
+  getLastEntrenador(traceId: string): Promise<PeerResponse>;
+  getPeers(traceId: string): Promise<{
+    "biblio-express": PeerResponse;
+    pokenetes: PeerResponse;
+  }>;
 }
 
 export class ExternalApiError extends Error {
@@ -16,72 +28,149 @@ export class ExternalApiError extends Error {
   }
 }
 
-type Fetch = (
+type FetchLike = (
   input: string | URL,
   init?: RequestInit
 ) => Promise<Response>;
 
+const REQUEST_TIMEOUT_MS = 5000;
+
+function joinUrl(baseUrl: string, path: string): string {
+  const base = baseUrl.replace(/\/$/, "");
+  const suffix = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${suffix}`;
+}
+
+export function pickLastRecord(payload: unknown): ExternalEntity | null {
+  if (Array.isArray(payload)) {
+    const last = payload.at(-1);
+    return isObject(last) ? last : null;
+  }
+
+  if (!isObject(payload)) {
+    return null;
+  }
+
+  if (isObject(payload.local)) {
+    return payload.local;
+  }
+
+  const nestedKeys = [
+    "data",
+    "users",
+    "user",
+    "books",
+    "entrenador",
+    "entrenadores",
+    "hospitals",
+    "doctors",
+    "pacientes"
+  ];
+
+  for (const key of nestedKeys) {
+    const value = payload[key];
+    if (Array.isArray(value)) {
+      const last = value.at(-1);
+      return isObject(last) ? last : null;
+    }
+    if (isObject(value) && key === "data") {
+      return value;
+    }
+  }
+
+  return payload;
+}
+
+function isObject(value: unknown): value is ExternalEntity {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function offlinePeer(entity: PeerResponse["entity"]): PeerResponse {
+  return { live: false, entity, data: null };
+}
+
 export class HttpExternalEntitiesClient implements ExternalEntitiesClient {
   constructor(
-    private readonly usersUrl: string,
-    private readonly entrenadorUrl: string,
-    private readonly fetcher: Fetch = fetch
+    private readonly users: PeerTarget,
+    private readonly entrenador: PeerTarget,
+    private readonly fetcher: FetchLike = fetch
   ) {}
 
-  getLastUser(): Promise<ExternalEntity> {
-    return this.getLastEntity("biblio-express", this.usersUrl);
+  getLastUser(traceId: string): Promise<PeerResponse> {
+    return this.getLastPeer("biblio-express", "users", this.users, traceId);
   }
 
-  getLastEntrenador(): Promise<ExternalEntity> {
-    return this.getLastEntity("pokenetes", this.entrenadorUrl);
+  getLastEntrenador(traceId: string): Promise<PeerResponse> {
+    return this.getLastPeer("pokenetes", "entrenador", this.entrenador, traceId);
   }
 
-  private async getLastEntity(
+  async getPeers(traceId: string) {
+    const [users, entrenador] = await Promise.all([
+      this.getLastUser(traceId),
+      this.getLastEntrenador(traceId)
+    ]);
+
+    return {
+      "biblio-express": users,
+      pokenetes: entrenador
+    };
+  }
+
+  private async getLastPeer(
     service: string,
-    baseUrl: string,
-  ): Promise<ExternalEntity> {
-    const resourceUrl = baseUrl.replace(/\/$/, "");
-    const lastResponse = await this.fetcher(`${resourceUrl}/last`, {
-      signal: AbortSignal.timeout(5000)
-    });
-
-    if (lastResponse.ok) {
-      return this.parseEntity(service, lastResponse);
+    entity: PeerResponse["entity"],
+    target: PeerTarget,
+    traceId: string
+  ): Promise<PeerResponse> {
+    if (!target.baseUrl.trim()) {
+      return offlinePeer(entity);
     }
 
-    if (lastResponse.status !== 404) {
-      throw new ExternalApiError(service, lastResponse.status, await lastResponse.text());
+    const lastUrl = joinUrl(target.baseUrl, target.lastPath);
+    const listUrl = joinUrl(target.baseUrl, target.listPath);
+
+    try {
+      const lastResponse = await this.request(lastUrl, traceId);
+      if (lastResponse.ok) {
+        return {
+          live: true,
+          entity,
+          data: pickLastRecord(await lastResponse.json())
+        };
+      }
+
+      if (lastResponse.status !== 404) {
+        throw new ExternalApiError(service, lastResponse.status, await lastResponse.text());
+      }
+    } catch (error) {
+      if (error instanceof ExternalApiError) {
+        return offlinePeer(entity);
+      }
     }
 
-    const listResponse = await this.fetcher(resourceUrl, {
-      signal: AbortSignal.timeout(5000)
-    });
-    if (!listResponse.ok) {
-      throw new ExternalApiError(service, listResponse.status, await listResponse.text());
-    }
+    try {
+      const listResponse = await this.request(listUrl, traceId);
+      if (!listResponse.ok) {
+        return offlinePeer(entity);
+      }
 
-    const body: unknown = await listResponse.json();
-    if (!Array.isArray(body) || body.length === 0) {
-      throw new ExternalApiError(service, listResponse.status, "Empty list response");
+      return {
+        live: true,
+        entity,
+        data: pickLastRecord(await listResponse.json())
+      };
+    } catch {
+      return offlinePeer(entity);
     }
-
-    const last = body[body.length - 1];
-    if (!last || typeof last !== "object" || Array.isArray(last)) {
-      throw new ExternalApiError(service, listResponse.status, "Invalid JSON object response");
-    }
-
-    return last as ExternalEntity;
   }
 
-  private async parseEntity(
-    service: string,
-    response: Response
-  ): Promise<ExternalEntity> {
-    const body: unknown = await response.json();
-    if (!body || typeof body !== "object" || Array.isArray(body)) {
-      throw new ExternalApiError(service, response.status, "Invalid JSON object response");
-    }
-
-    return body as ExternalEntity;
+  private request(url: string, traceId: string): Promise<Response> {
+    return this.fetcher(url, {
+      headers: {
+        Accept: "application/json",
+        "x-trace-id": traceId
+      },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+    });
   }
 }

@@ -57,8 +57,10 @@ describe("HospitalService", () => {
       getById: vi.fn().mockResolvedValue(hospital)
     } as any;
     const externalEntitiesClient = {
-      getLastUser: vi.fn().mockResolvedValue({ id: 1, name: "User" }),
-      getLastEntrenador: vi.fn().mockResolvedValue({ id: "1", nombre: "Ash" })
+      getPeers: vi.fn().mockResolvedValue({
+        "biblio-express": { live: true, entity: "users", data: { id: 1, name: "User" } },
+        pokenetes: { live: true, entity: "entrenador", data: { id: "1", nombre: "Ash" } }
+      })
     };
 
     const service = new HospitalService(repository, externalEntitiesClient);
@@ -75,7 +77,6 @@ describe("HospitalService", () => {
         pokenetes: { live: true, entity: "entrenador", data: { id: "1", nombre: "Ash" } }
       }
     });
-    expect(externalEntitiesClient.getLastUser).toHaveBeenCalledOnce();
-    expect(externalEntitiesClient.getLastEntrenador).toHaveBeenCalledOnce();
+    expect(externalEntitiesClient.getPeers).toHaveBeenCalledWith("trace-1");
   });
 });

@@ -13,7 +13,10 @@ export const pacienteRoutes = (
     if (version === "v2") {
       fastify.get("/pacientes/last", controller.getLast);
     }
-    fastify.get("/pacientes/:id", controller.getById);
+    fastify.get(
+      "/pacientes/:id",
+      version === "v2" ? controller.getByIdV2 : controller.getById
+    );
     fastify.post("/pacientes", controller.create);
     fastify.put("/pacientes/:id", controller.replace);
     fastify.patch("/pacientes/:id", controller.patch);

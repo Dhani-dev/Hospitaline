@@ -21,19 +21,32 @@ export function createDefaultServices(): ServiceContainer {
   const pacienteRepository = new PacienteRepository(pool);
   const env = getEnvConfig();
   const externalEntitiesClient = new HttpExternalEntitiesClient(
-    env.usersApiUrl,
-    env.entrenadorApiUrl
+    {
+      baseUrl: env.usersApiUrl,
+      lastPath: env.usersLastPath,
+      listPath: env.usersListPath
+    },
+    {
+      baseUrl: env.entrenadorApiUrl,
+      lastPath: env.entrenadorLastPath,
+      listPath: env.entrenadorListPath
+    }
   );
 
   const hospitalService = new HospitalService(
     hospitalRepository,
     externalEntitiesClient
   );
-  const doctorService = new DoctorService(doctorRepository, hospitalRepository);
+  const doctorService = new DoctorService(
+    doctorRepository,
+    hospitalRepository,
+    externalEntitiesClient
+  );
   const pacienteService = new PacienteService(
     pacienteRepository,
     hospitalRepository,
-    doctorRepository
+    doctorRepository,
+    externalEntitiesClient
   );
 
   return {

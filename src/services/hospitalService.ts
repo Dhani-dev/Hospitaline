@@ -5,6 +5,7 @@ import { Hospital, HospitalV2Response } from "../types/entities";
 import { HospitalFilters } from "../repositories/hospitalRepository";
 import { IHospitalService } from "./contracts";
 import { ExternalEntitiesClient } from "../integrations/externalEntitiesClient";
+import { buildEntityV2Response } from "../integrations/v2Response";
 
 export class HospitalService implements IHospitalService {
   constructor(
@@ -30,37 +31,12 @@ export class HospitalService implements IHospitalService {
       return null;
     }
 
-    const peers = await Promise.all([
-      this.getPeer("users", this.externalEntitiesClient?.getLastUser),
-      this.getPeer("entrenador", this.externalEntitiesClient?.getLastEntrenador)
-    ]);
-
-    return {
-      api: "hospitaline",
-      version: "2.0.0",
-      trace_id: traceId,
-      entity: "hospital",
-      local: hospital,
-      peers: {
-        "biblio-express": peers[0],
-        pokenetes: peers[1]
-      }
-    };
-  }
-
-  private async getPeer(
-    entity: "users" | "entrenador",
-    loader?: () => Promise<Record<string, unknown>>
-  ) {
-    if (!loader) {
-      return { live: false, entity, data: null };
-    }
-
-    try {
-      return { live: true, entity, data: await loader() };
-    } catch {
-      return { live: false, entity, data: null };
-    }
+    return buildEntityV2Response(
+      "hospital",
+      hospital,
+      traceId,
+      this.externalEntitiesClient
+    );
   }
 
   create(payload: NewHospital): Promise<Hospital> {

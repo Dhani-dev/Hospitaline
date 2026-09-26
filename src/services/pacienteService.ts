@@ -2,15 +2,18 @@ import { DoctorRepository } from "../repositories/doctorRepository";
 import { HospitalRepository } from "../repositories/hospitalRepository";
 import { PacienteRepository, PacienteFilters } from "../repositories/pacienteRepository";
 import { HttpError } from "../errors/httpError";
-import { NewPaciente, Paciente, UpdatePaciente } from "../types/entities";
+import { NewPaciente, Paciente, PacienteV2Response, UpdatePaciente } from "../types/entities";
 import { QueryPayload, QueryResult } from "../types/query";
 import { IPacienteService } from "./contracts";
+import { ExternalEntitiesClient } from "../integrations/externalEntitiesClient";
+import { buildEntityV2Response } from "../integrations/v2Response";
 
 export class PacienteService implements IPacienteService {
   constructor(
     private readonly pacienteRepository: PacienteRepository,
     private readonly hospitalRepository: HospitalRepository,
-    private readonly doctorRepository: DoctorRepository
+    private readonly doctorRepository: DoctorRepository,
+    private readonly externalEntitiesClient?: ExternalEntitiesClient
   ) {}
 
   list(): Promise<Paciente[]> {
@@ -23,6 +26,20 @@ export class PacienteService implements IPacienteService {
 
   getLast(): Promise<Paciente | null> {
     return this.pacienteRepository.getLast();
+  }
+
+  async getByIdV2(id: string, traceId: string): Promise<PacienteV2Response | null> {
+    const paciente = await this.pacienteRepository.getById(id);
+    if (!paciente) {
+      return null;
+    }
+
+    return buildEntityV2Response(
+      "paciente",
+      paciente,
+      traceId,
+      this.externalEntitiesClient
+    );
   }
 
   async create(payload: NewPaciente): Promise<Paciente> {
