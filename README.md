@@ -113,50 +113,8 @@ curl http://localhost:3000/health
 
 ## Tests y Coverage
 
-Ejecutar todos los tests:
-
-```bash
-npm test
-```
-
-Ejecutar tests con coverage:
-
-```bash
-npm run test:coverage
-```
-
-Comprobar el mínimo de coverage para test:
-
-```bash
-npm run coverage:check:60
-```
-
-Comprobar el mínimo de coverage para producción:
-
-```bash
-npm run coverage:check:85
-```
-
-El reporte HTML se genera en:
-
-```text
-coverage/index.html
-```
-
-Para abrirlo:
-
-```bash
-# macOS
-open coverage/index.html
-
-# Windows
-start coverage/index.html
-
-# Linux
-xdg-open coverage/index.html
-```
-
-Los mismos tests se utilizan para ambos ambientes; cambia únicamente el porcentaje mínimo exigido.
+Los tests y la generación de coverage están desactivados temporalmente. No forman parte
+de los scripts de `npm`, Docker Compose ni los pipelines activos.
 
 ---
 
@@ -167,7 +125,7 @@ El proyecto tiene:
 | Archivo | Función |
 |---|---|
 | `Dockerfile` | Construye la imagen de la API |
-| `docker-compose.yml` | Ejecuta la API y un contenedor para tests |
+| `docker-compose.yml` | Ejecuta la API |
 
 El `Dockerfile` utiliza varias etapas:
 
