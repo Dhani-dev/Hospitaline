@@ -59,6 +59,36 @@ spec:
                   name: hospitaline-db
                   key: DB_PASSWORD
 
+            - name: REDIS_HOST
+              value: "redis"
+
+            - name: REDIS_PORT
+              value: "6379"
+
+            - name: CACHE_TTL_SECONDS
+              value: "60"
+
+            - name: PEER_CACHE_TTL_SECONDS
+              value: "30"
+
+            - name: USERS_API_URL
+              value: ""
+
+            - name: USERS_LAST_PATH
+              value: "/api/v2/users/last"
+
+            - name: USERS_LIST_PATH
+              value: "/api/users"
+
+            - name: ENTRENADOR_API_URL
+              value: "https://pokenetes-api-prod.onrender.com"
+
+            - name: ENTRENADOR_LAST_PATH
+              value: "/api/v2/entrenador/last"
+
+            - name: ENTRENADOR_LIST_PATH
+              value: "/entrenador"
+
           resources:
             requests:
               cpu: "250m"
