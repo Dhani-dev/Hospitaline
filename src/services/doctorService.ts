@@ -6,12 +6,15 @@ import { HttpError } from "../errors/httpError";
 import { IDoctorService } from "./contracts";
 import { ExternalEntitiesClient } from "../integrations/externalEntitiesClient";
 import { buildEntityV2Response } from "../integrations/v2Response";
+import { EntityCache } from "../cache/entityCache";
+import { cacheKeys } from "../cache/keys";
 
 export class DoctorService implements IDoctorService {
   constructor(
     private readonly doctorRepository: DoctorRepository,
     private readonly hospitalRepository: HospitalRepository,
-    private readonly externalEntitiesClient?: ExternalEntitiesClient
+    private readonly externalEntitiesClient?: ExternalEntitiesClient,
+    private readonly entityCache?: EntityCache
   ) {}
 
   list(): Promise<Doctor[]> {
@@ -19,15 +22,19 @@ export class DoctorService implements IDoctorService {
   }
 
   getById(id: string): Promise<Doctor | null> {
-    return this.doctorRepository.getById(id);
+    return this.readThrough(cacheKeys.local("doctor", id), () =>
+      this.doctorRepository.getById(id)
+    );
   }
 
   getLast(): Promise<Doctor | null> {
-    return this.doctorRepository.getLast();
+    return this.readThrough(cacheKeys.last("doctor"), () =>
+      this.doctorRepository.getLast()
+    );
   }
 
   async getByIdV2(id: string, traceId: string): Promise<DoctorV2Response | null> {
-    const doctor = await this.doctorRepository.getById(id);
+    const doctor = await this.getById(id);
     if (!doctor) {
       return null;
     }
@@ -45,7 +52,9 @@ export class DoctorService implements IDoctorService {
     if (!hospital) {
       throw new HttpError(400, "Hospital does not exist");
     }
-    return this.doctorRepository.create(payload);
+    const created = await this.doctorRepository.create(payload);
+    await this.entityCache?.invalidateLocal("doctor");
+    return created;
   }
 
   async replace(id: string, payload: NewDoctor): Promise<Doctor | null> {
@@ -53,7 +62,9 @@ export class DoctorService implements IDoctorService {
     if (!hospital) {
       throw new HttpError(400, "Hospital does not exist");
     }
-    return this.doctorRepository.replace(id, payload);
+    const updated = await this.doctorRepository.replace(id, payload);
+    await this.entityCache?.invalidateLocal("doctor", id);
+    return updated;
   }
 
   async patch(id: string, payload: UpdateDoctor): Promise<Doctor | null> {
@@ -63,14 +74,26 @@ export class DoctorService implements IDoctorService {
         throw new HttpError(400, "Hospital does not exist");
       }
     }
-    return this.doctorRepository.patch(id, payload);
+    const updated = await this.doctorRepository.patch(id, payload);
+    await this.entityCache?.invalidateLocal("doctor", id);
+    return updated;
   }
 
-  remove(id: string): Promise<boolean> {
-    return this.doctorRepository.remove(id);
+  async remove(id: string): Promise<boolean> {
+    const removed = await this.doctorRepository.remove(id);
+    await this.entityCache?.invalidateLocal("doctor", id);
+    return removed;
   }
 
   query(payload: QueryPayload<DoctorFilters>): Promise<QueryResult<Doctor>> {
     return this.doctorRepository.query(payload);
+  }
+
+  private readThrough<T>(key: string, loader: () => Promise<T>): Promise<T> {
+    if (!this.entityCache) {
+      return loader();
+    }
+
+    return this.entityCache.readThrough(key, loader);
   }
 }

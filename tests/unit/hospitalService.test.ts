@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { HospitalService } from "../../src/services/hospitalService";
+import { EntityCache } from "../../src/cache/entityCache";
 
 describe("HospitalService", () => {
   it("delegates all operations to repository", async () => {
@@ -78,5 +79,46 @@ describe("HospitalService", () => {
       }
     });
     expect(externalEntitiesClient.getPeers).toHaveBeenCalledWith("trace-1");
+  });
+
+  it("serves getById from cache and invalidates it after writes", async () => {
+    const hospital = {
+      id: "1",
+      name: "Central",
+      address: "A",
+      city: "Bogota",
+      phone: "1234567",
+      created_at: "2026-01-01",
+      updated_at: "2026-01-01"
+    };
+    const repository = {
+      getById: vi.fn().mockResolvedValue(hospital),
+      getLast: vi.fn().mockResolvedValue(hospital),
+      create: vi.fn().mockResolvedValue(hospital),
+      replace: vi.fn().mockResolvedValue(hospital),
+      patch: vi.fn().mockResolvedValue(hospital),
+      remove: vi.fn().mockResolvedValue(true)
+    } as any;
+    const cache = {
+      get: vi.fn()
+        .mockResolvedValueOnce({ hit: false })
+        .mockResolvedValueOnce({ hit: true, value: hospital }),
+      set: vi.fn(),
+      del: vi.fn()
+    };
+    const entityCache = new EntityCache(cache as any, 60);
+
+    const service = new HospitalService(repository, undefined, entityCache);
+
+    await service.getById("1");
+    await service.getById("1");
+    await service.create({ name: "A", address: "B", city: "C", phone: "1234567" });
+    await service.replace("1", { name: "A", address: "B", city: "C", phone: "1234567" });
+    await service.patch("1", { city: "Cali" });
+    await service.remove("1");
+
+    expect(repository.getById).toHaveBeenCalledTimes(1);
+    expect(cache.set).toHaveBeenCalledOnce();
+    expect(cache.del).toHaveBeenCalledTimes(4);
   });
 });

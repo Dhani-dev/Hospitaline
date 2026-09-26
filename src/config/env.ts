@@ -16,6 +16,11 @@ export type EnvConfig = {
   entrenadorApiUrl: string;
   entrenadorLastPath: string;
   entrenadorListPath: string;
+  redisHost: string;
+  redisPort: number;
+  redisPassword: string;
+  cacheTtlSeconds: number;
+  peerCacheTtlSeconds: number;
 };
 
 let cachedEnv: EnvConfig | null = null;
@@ -74,7 +79,12 @@ export function getEnvConfig(): EnvConfig {
     usersListPath: process.env.USERS_LIST_PATH ?? "/api/users",
     entrenadorApiUrl: optionalUrl(process.env.ENTRENADOR_API_URL),
     entrenadorLastPath: process.env.ENTRENADOR_LAST_PATH ?? "/api/v2/entrenador/last",
-    entrenadorListPath: process.env.ENTRENADOR_LIST_PATH ?? "/entrenador"
+    entrenadorListPath: process.env.ENTRENADOR_LIST_PATH ?? "/entrenador",
+    redisHost: optionalUrl(process.env.REDIS_HOST),
+    redisPort: Number(process.env.REDIS_PORT ?? 6379),
+    redisPassword: process.env.REDIS_PASSWORD ?? "",
+    cacheTtlSeconds: Number(process.env.CACHE_TTL_SECONDS ?? 60),
+    peerCacheTtlSeconds: Number(process.env.PEER_CACHE_TTL_SECONDS ?? 30)
   };
 
   return cachedEnv;

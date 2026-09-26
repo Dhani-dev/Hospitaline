@@ -12,7 +12,20 @@ export function buildApp(services: ServiceContainer) {
   app.register(queryMethodPlugin);
   registerTraceId(app);
 
-  app.get("/health", async () => ({ status: "ok" }));
+  app.get("/health", async () => {
+    const cache = services.cache;
+    if (!cache) {
+      return { status: "ok", cache: { backend: "disabled" } };
+    }
+
+    return {
+      status: "ok",
+      cache: {
+        ...cache.stats(),
+        connected: await cache.ping()
+      }
+    };
+  });
 
   const apiPrefixes = ["/api/v1", "/api/v2"];
 

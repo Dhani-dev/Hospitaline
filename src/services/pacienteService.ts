@@ -7,13 +7,16 @@ import { QueryPayload, QueryResult } from "../types/query";
 import { IPacienteService } from "./contracts";
 import { ExternalEntitiesClient } from "../integrations/externalEntitiesClient";
 import { buildEntityV2Response } from "../integrations/v2Response";
+import { EntityCache } from "../cache/entityCache";
+import { cacheKeys } from "../cache/keys";
 
 export class PacienteService implements IPacienteService {
   constructor(
     private readonly pacienteRepository: PacienteRepository,
     private readonly hospitalRepository: HospitalRepository,
     private readonly doctorRepository: DoctorRepository,
-    private readonly externalEntitiesClient?: ExternalEntitiesClient
+    private readonly externalEntitiesClient?: ExternalEntitiesClient,
+    private readonly entityCache?: EntityCache
   ) {}
 
   list(): Promise<Paciente[]> {
@@ -21,15 +24,19 @@ export class PacienteService implements IPacienteService {
   }
 
   getById(id: string): Promise<Paciente | null> {
-    return this.pacienteRepository.getById(id);
+    return this.readThrough(cacheKeys.local("paciente", id), () =>
+      this.pacienteRepository.getById(id)
+    );
   }
 
   getLast(): Promise<Paciente | null> {
-    return this.pacienteRepository.getLast();
+    return this.readThrough(cacheKeys.last("paciente"), () =>
+      this.pacienteRepository.getLast()
+    );
   }
 
   async getByIdV2(id: string, traceId: string): Promise<PacienteV2Response | null> {
-    const paciente = await this.pacienteRepository.getById(id);
+    const paciente = await this.getById(id);
     if (!paciente) {
       return null;
     }
@@ -45,15 +52,17 @@ export class PacienteService implements IPacienteService {
   async create(payload: NewPaciente): Promise<Paciente> {
     await this.assertHospital(payload.hospital_id);
     await this.assertDoctor(payload.doctor_id, payload.hospital_id);
-
-    return this.pacienteRepository.create(payload);
+    const created = await this.pacienteRepository.create(payload);
+    await this.entityCache?.invalidateLocal("paciente");
+    return created;
   }
 
   async replace(id: string, payload: NewPaciente): Promise<Paciente | null> {
     await this.assertHospital(payload.hospital_id);
     await this.assertDoctor(payload.doctor_id, payload.hospital_id);
-
-    return this.pacienteRepository.replace(id, payload);
+    const updated = await this.pacienteRepository.replace(id, payload);
+    await this.entityCache?.invalidateLocal("paciente", id);
+    return updated;
   }
 
   async patch(id: string, payload: UpdatePaciente): Promise<Paciente | null> {
@@ -68,11 +77,15 @@ export class PacienteService implements IPacienteService {
     await this.assertHospital(hospitalId);
     await this.assertDoctor(doctorId, hospitalId);
 
-    return this.pacienteRepository.patch(id, payload);
+    const updated = await this.pacienteRepository.patch(id, payload);
+    await this.entityCache?.invalidateLocal("paciente", id);
+    return updated;
   }
 
-  remove(id: string): Promise<boolean> {
-    return this.pacienteRepository.remove(id);
+  async remove(id: string): Promise<boolean> {
+    const removed = await this.pacienteRepository.remove(id);
+    await this.entityCache?.invalidateLocal("paciente", id);
+    return removed;
   }
 
   query(payload: QueryPayload<PacienteFilters>): Promise<QueryResult<Paciente>> {
@@ -99,5 +112,13 @@ export class PacienteService implements IPacienteService {
     if (doctor.hospital_id !== hospitalId) {
       throw new HttpError(400, "Doctor must belong to the same hospital");
     }
+  }
+
+  private readThrough<T>(key: string, loader: () => Promise<T>): Promise<T> {
+    if (!this.entityCache) {
+      return loader();
+    }
+
+    return this.entityCache.readThrough(key, loader);
   }
 }
