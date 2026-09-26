@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hospitaline-api
+  namespace: hospitaline-prod
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: hospitaline-api
+
+  template:
+    metadata:
+      labels:
+        app: hospitaline-api
+
+    spec:
+      serviceAccountName: hospitaline-api
+
+      containers:
+
+        # Hospitaline API
+        - name: hospitaline-api
+          image: us-central1-docker.pkg.dev/project-39d0c894-3885-4211-89d/hospitaline-repo/hospitaline-api:v1.0.1
+          
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+
+          env:
+            - name: NODE_ENV
+              value: "production"
+
+            - name: PORT
+              value: "3000"
+
+            - name: DB_HOST
+              value: "127.0.0.1"
+
+            - name: DB_PORT
+              value: "5432"
+
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: hospitaline-db
+                  key: DB_NAME
+
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: hospitaline-db
+                  key: DB_USER
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hospitaline-db
+                  key: DB_PASSWORD
+
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+
+        # Cloud SQL Auth Proxy
+        - name: cloud-sql-proxy
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.25.4
+
+          args:
+            - "--structured-logs"
+            - "--port=5432"
+            - "project-39d0c894-3885-4211-89d:us-central1:hospitaline-db"
+
+          securityContext:
+            runAsNonRoot: true
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
