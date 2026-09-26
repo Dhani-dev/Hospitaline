@@ -10,12 +10,3 @@ services:
     ports:
       - "3000:3000"
     command: npm run start
-
-  tests:
-    image: node:22-alpine
-    working_dir: /workspace
-    volumes:
-      - ./:/workspace
-    env_file:
-      - .env.test
-    command: sh -c "npm ci && npm run test:coverage"
