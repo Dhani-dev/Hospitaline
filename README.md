@@ -1,6 +1,6 @@
 # Hospitaline
 
-API REST para la gestión de **hospitales, doctores y pacientes**, construida con **Node.js, Fastify, TypeScript y Supabase**. El proyecto incluye pruebas con **Vitest**, cobertura de código, **Docker**, **Docker Compose**, **GitHub Actions** y despliegue en **Render**.
+API REST para la gestión de **hospitales, doctores y pacientes**, construida con **Node.js, Fastify, TypeScript y PostgreSQL**. El proyecto incluye **Docker**, **GKE**, **Cloud SQL** y, en Seguimiento #2, reuso HTTP de entidades de otras nubes más una **caché distribuida Redis**.
 
 - Test / staging: https://hospitaline-dev.onrender.com
 - Producción: https://hospitaline.onrender.com
@@ -61,20 +61,54 @@ Variables principales:
 ```text
 PORT=3000
 NODE_ENV=test
-SUPABASE_URL=...
-SUPABASE_PUBLISHABLE_KEY=...
-SUPABASE_SECRET_KEY=...
-SUPABASE_JWKS_URL=...
-USERS_API_URL=https://your-azure-users-api.example.com/api/users
-ENTRENADOR_API_URL=https://your-aws-entrenador-api.example.com/entrenador
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=hospitaline
+DB_USER=postgres
+DB_PASSWORD=...
+USERS_API_URL=https://biblio-express.azurewebsites.net
+USERS_LAST_PATH=/api/v2/users/last
+USERS_LIST_PATH=/api/users
+ENTRENADOR_API_URL=https://pokenetes-api-prod.onrender.com
+ENTRENADOR_LAST_PATH=/api/v2/entrenador/last
+ENTRENADOR_LIST_PATH=/entrenador
+REDIS_HOST=127.0.0.1
+REDIS_PORT=6379
+CACHE_TTL_SECONDS=60
+PEER_CACHE_TTL_SECONDS=30
 ```
 
-No subir archivos `.env` con credenciales reales al repositorio.
+`USERS_API_URL` y `ENTRENADOR_API_URL` pueden quedar vacías hasta que existan las URLs de Azure y AWS. Si un peer no está configurado o falla, `local` sigue saliendo y el peer se marca con `live: false`. Nunca se inventan datos.
 
-`GET /api/v1/hospitals/:id` devuelve únicamente el hospital local. En v2,
-`GET /api/v2/hospitals/last` devuelve el último hospital local sin peers y
-`GET /api/v2/hospitals/:id` devuelve el hospital local junto con el último
-`users` de Biblio Express y el último `entrenador` de Pokenetes:
+## API v2 y reuso entre nubes
+
+Hospitaline no duplica la lógica de los compañeros: consume por HTTP el último `users` de [biblio-express](https://github.com/PholCast/biblio-express) (Azure) y el último `entrenador` de [Pokenetes-API](https://github.com/Enedev/Pokenetes-API) (AWS).
+
+### GET /api/v2/{entidad}/last
+
+Solo el último registro **local**. Sin `peers`. Las entidades son `hospitals`, `doctors` y `pacientes`.
+
+```bash
+curl http://localhost:3000/api/v2/hospitals/last
+```
+
+```json
+{
+  "api": "hospitaline",
+  "version": "2.0.0",
+  "trace_id": "...",
+  "entity": "hospital",
+  "local": { "id": "...", "name": "Central" }
+}
+```
+
+### GET /api/v2/{entidad}/:id
+
+Uno local (ese id) + last en vivo de biblio-express y Pokenetes. Así salen los 3 objetos.
+
+```bash
+curl http://localhost:3000/api/v2/hospitals/UUID
+```
 
 ```json
 {
@@ -90,10 +124,41 @@ No subir archivos `.env` con credenciales reales al repositorio.
 }
 ```
 
-Las URLs base se configuran con `USERS_API_URL` y `ENTRENADOR_API_URL`; cada
-una debe apuntar al recurso remoto sin `/last`. El cliente intenta primero
-`.../last` y usa el último elemento del listado como fallback. Si un peer falla,
-`local` continúa disponible y el peer se marca con `live: false`.
+El cliente intenta primero `.../last` y, si aún no existe, usa el listado y toma el último ítem. El header `x-trace-id` se acepta, se responde y se propaga a las APIs compañeras.
+
+Las APIs de los compañeros deben consumir `GET /api/v2/hospitals/last` (y opcionalmente `/api/v1/hospitals` como fallback).
+
+## Caché distribuida
+
+Este es el artefacto de la nube GCP (Integrante B): Redis con TTL e invalidación.
+
+| Qué se cachea | Clave | TTL | Invalidación |
+|---|---|---|---|
+| Hospital / doctor / paciente por id | `hospitaline:local:{entidad}:{id}` | `CACHE_TTL_SECONDS` (60s) | POST, PUT, PATCH, DELETE |
+| Último registro local | `hospitaline:local:{entidad}:last` | 60s | POST, PUT, PATCH, DELETE |
+| `users` de biblio-express | `hospitaline:peer:biblio-express:users:last` | `PEER_CACHE_TTL_SECONDS` (30s) | solo TTL |
+| `entrenador` de Pokenetes | `hospitaline:peer:pokenetes:entrenador:last` | 30s | solo TTL |
+
+Los fallos de un peer (`live: false`) **no** se cachean, para reintentar en la siguiente petición. Si Redis no está configurado, la API usa una caché en memoria del proceso.
+
+Health check con estado de caché:
+
+```bash
+curl http://localhost:3000/health
+```
+
+Local con Redis:
+
+```bash
+docker compose up --build
+```
+
+En GKE aplica primero `k8s/redis.yaml` y luego el deployment. `REDIS_HOST=redis` apunta al Service del clúster. El mismo cliente es compatible con Memorystore si más adelante se cambia el host.
+
+```text
+k8s/redis.yaml
+k8s/deployment.yaml
+```
 
 ---
 
@@ -291,9 +356,15 @@ Las rutas están agrupadas bajo:
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| `GET` | `/health` | Health check |
+| `GET` | `/health` | Health check + estado de la caché |
 | `GET` | `/api/v1/hospitals` | Listar hospitales |
 | `GET` | `/api/v1/hospitals/:id` | Obtener hospital |
+| `GET` | `/api/v2/hospitals/last` | Último hospital local, sin peers |
+| `GET` | `/api/v2/hospitals/:id` | Hospital local + last de `users` y `entrenador` |
+| `GET` | `/api/v2/doctors/last` | Último doctor local, sin peers |
+| `GET` | `/api/v2/doctors/:id` | Doctor local + last de `users` y `entrenador` |
+| `GET` | `/api/v2/pacientes/last` | Último paciente local, sin peers |
+| `GET` | `/api/v2/pacientes/:id` | Paciente local + last de `users` y `entrenador` |
 | `POST` | `/api/v1/hospitals` | Crear hospital |
 | `PUT` | `/api/v1/hospitals/:id` | Reemplazar hospital |
 | `PATCH` | `/api/v1/hospitals/:id` | Actualizar parcialmente |
@@ -501,10 +572,12 @@ src/
 ├── app.ts
 ├── server.ts
 ├── bootstrap/
+├── cache/
 ├── config/
 ├── controllers/
 ├── db/
 ├── errors/
+├── integrations/
 ├── plugins/
 ├── repositories/
 ├── routes/
